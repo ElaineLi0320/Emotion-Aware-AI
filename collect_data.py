@@ -37,7 +37,7 @@ def detect_face(image):
     face = face.resize((48, 48))
     return face
 
-def download_and_process_images(query, api_key, cse_id, num_images, output_csv, img_class):
+def get_images_ggl(query, api_key, cse_id, num_images, output_csv, img_class):
     """
         Downloads images from Google Images for a specific query, detects faces,
         processes them into FER2013 format, and appends them to a CSV file.
@@ -63,7 +63,8 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv, 
         if os.stat(output_csv).st_size == 0:
             writer.writerow(["emotion", "pixels"])  # Write header if file is empty
 
-        queries = [query, query + " close-up", query + " portrait", query + " black and white"]
+        queries = [query, query + " face", query + " facial expression", query + " faces men", 
+                   query + " faces women", query + " emotion"]
         random.shuffle(queries)  # Randomize queries to get diverse images
         
         total_images_fetched = 0
@@ -151,13 +152,13 @@ if __name__ == "__main__":
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
-    EMOTION_QUERY = "frustration human face" # Change the query string for other emotions
+    EMOTION_QUERY = "frustration" # Change the query string for other emotions
     NUM_IMAGES = 1000
-    OUTPUT_CSV = "data/frustration_ggl.csv" # Change file name to match search results
+    OUTPUT_CSV = f"data/{EMOTION_QUERY}_ggl.csv" # Change file name to match search results
     IMG_CLS = 1 # Change to other emotion classes
 
     if mode == 'collect':
-        download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
+        get_images_ggl(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
         print(f"Images processed and saved to {OUTPUT_CSV}")
     elif mode == 'audit':
         verify_images(OUTPUT_CSV)
