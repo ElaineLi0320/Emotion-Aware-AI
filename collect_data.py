@@ -151,10 +151,10 @@ if __name__ == "__main__":
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
-    EMOTION_QUERY = "frustration human face"
+    EMOTION_QUERY = "frustration human face" # Change the query string for other emotions
     NUM_IMAGES = 1000
-    OUTPUT_CSV = "data/frustration_ggl.csv"
-    IMG_CLS = 1
+    OUTPUT_CSV = "data/frustration_ggl.csv" # Change file name to match search results
+    IMG_CLS = 1 # Change to other emotion classes
 
     if mode == 'collect':
         download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
