@@ -5,31 +5,38 @@
 import os
 import csv
 import io
+import cv2
+import numpy as np
+import requests
 from googleapiclient.discovery import build
 from PIL import Image, ImageOps
-import numpy as np
+from dotenv import load_dotenv
+
+def detect_face(image):
+    """Detects the largest face in an image and returns the cropped face."""
+    gray = np.array(image)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    if len(faces) == 0:
+        return None  # No face detected
+    
+    x, y, w, h = faces[0]  # Assume the first detected face is the primary one
+    face = image.crop((x, y, x + w, y + h))
+    face = face.resize((48, 48))
+    return face
 
 def download_and_process_images(query, api_key, cse_id, num_images, output_csv):
     """
-    Downloads images from Google Images for a specific query, processes them into FER2013 format,
-    and saves them in a CSV file.
-
-    Args:
-        query (str): Search query (e.g., "boredom face").
-        api_key (str): Google API key.
-        cse_id (str): Google Custom Search Engine ID.
-        num_images (int): Number of images to retrieve.
-        output_csv (str): Path to the output CSV file.
+    Downloads images from Google Images for a specific query, detects faces,
+    processes them into FER2013 format, and saves them in a CSV file.
     """
-    # Initialize Google Custom Search
     service = build("customsearch", "v1", developerKey=api_key)
 
-    # Prepare CSV file
     with open(output_csv, mode="w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["emotion", "pixels"])  # Write the header
 
-        # Loop to fetch images
         for start in range(1, num_images + 1, 10):
             result = service.cse().list(
                 q=query,
@@ -41,35 +48,34 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv):
 
             for item in result.get("items", []):
                 try:
-                    # Download image
                     img_url = item["link"]
-                    img = Image.open(io.BytesIO(requests.get(img_url, timeout=10).content))
-
-                    # Convert to grayscale, resize to 48x48
+                    response = requests.get(img_url, timeout=10)
+                    img = Image.open(io.BytesIO(response.content))
                     img = ImageOps.grayscale(img)
-                    img = img.resize((48, 48))
-
-                    # Convert to pixel array and flatten
-                    pixel_array = np.array(img).flatten()
+                    
+                    face = detect_face(img)
+                    if face is None:
+                        continue  # Skip images without detected faces
+                    
+                    pixel_array = np.array(face).flatten()
                     pixel_str = " ".join(map(str, pixel_array))
-
-                    # Write to CSV with label (assuming "boredom" is label 7 for this example)
                     writer.writerow([7, pixel_str])
-
+                
                 except Exception as e:
                     print(f"Error processing image: {e}")
 
 if __name__ == "__main__":
-    # Replace with your Google API key and Custom Search Engine ID
-    GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
-    CUSTOM_SEARCH_ENGINE_ID = "YOUR_CSE_ID"
+    load_dotenv()
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
 
-    # Define search parameters
+    if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
+        raise ValueError("Missing API credentials. Check your .env file.")
+
     EMOTION_QUERY = "boredom face"
     NUM_IMAGES = 50
     OUTPUT_CSV = "boredom_images.csv"
 
-    # Run the function
     download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV)
 
     print(f"Images processed and saved to {OUTPUT_CSV}")
