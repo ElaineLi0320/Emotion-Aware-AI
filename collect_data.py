@@ -39,40 +39,55 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv, 
     service = build("customsearch", "v1", developerKey=api_key)
     existing_rows = set()
 
+    if os.path.exists(output_csv):
+        with open(output_csv, mode="r") as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader, None)  # Skip header
+            existing_rows = {row[1] for row in reader}  # Store existing pixel data to avoid duplicates
+
     with open(output_csv, mode="a", newline="") as csvfile:
         writer = csv.writer(csvfile)
         if os.stat(output_csv).st_size == 0:
             writer.writerow(["emotion", "pixels"])  # Write header if file is empty
 
-        start_indices = list(range(1, num_images + 1, 10))
-        random.shuffle(start_indices)  # Shuffle the start indices to randomize results
+        queries = [query, query + " close-up", query + " portrait", query + " black and white"]
+        random.shuffle(queries)  # Randomize queries to get diverse images
+        
+        total_images_fetched = 0
 
-        for start in start_indices:
-            result = service.cse().list(
-                q=query,
-                cx=cse_id,
-                searchType="image",
-                num=min(10, num_images - start + 1),
-                start=start
-            ).execute()
-
-            for item in result.get("items", []):
+        for q in queries:
+            for start in range(1, 91, 10):  # Google API allows up to start=90 (for 100 results max per query)
+                if total_images_fetched >= num_images:
+                    return
                 try:
-                    img_url = item["link"]
-                    response = requests.get(img_url, timeout=10)
-                    img = Image.open(io.BytesIO(response.content))
-                    img = ImageOps.grayscale(img)
-                    
-                    face = detect_face(img)
-                    if face is None:
-                        continue  # Skip images without detected faces
-                    
-                    pixel_array = np.array(face).flatten()
-                    pixel_str = " ".join(map(str, pixel_array))
-                    
-                    if pixel_str not in existing_rows:
-                        writer.writerow([img_class, pixel_str])
-                        existing_rows.add(pixel_str)
+                    result = service.cse().list(
+                        q=q,
+                        cx=cse_id,
+                        searchType="image",
+                        num=10,
+                        start=start
+                    ).execute()
+
+                    for item in result.get("items", []):
+                        if total_images_fetched >= num_images:
+                            return
+
+                        img_url = item["link"]
+                        response = requests.get(img_url, timeout=10)
+                        img = Image.open(io.BytesIO(response.content))
+                        img = ImageOps.grayscale(img)
+                        
+                        face = detect_face(img)
+                        if face is None:
+                            continue  # Skip images without detected faces
+                        
+                        pixel_array = np.array(face).flatten()
+                        pixel_str = " ".join(map(str, pixel_array))
+                        
+                        if pixel_str not in existing_rows:
+                            writer.writerow([img_class, pixel_str])
+                            existing_rows.add(pixel_str)
+                            total_images_fetched += 1
                 
                 except Exception as e:
                     print(f"Error processing image: {e}")
@@ -107,13 +122,13 @@ if __name__ == "__main__":
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
-    EMOTION_QUERY = "boredom human face"
+    EMOTION_QUERY = "frustration human face"
     NUM_IMAGES = 1000
-    OUTPUT_CSV = "boredom_ggl.csv"
-    IMG_CLS = 7
+    OUTPUT_CSV = "frustration_ggl.csv"
+    IMG_CLS = 1
 
-    download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
+    # download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
 
-    print(f"Images processed and saved to {OUTPUT_CSV}")
+    # print(f"Images processed and saved to {OUTPUT_CSV}")
 
-    # verify_images(OUTPUT_CSV)
+    verify_images(OUTPUT_CSV)
