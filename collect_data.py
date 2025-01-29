@@ -1,5 +1,5 @@
 """
-    Collect images of three additional facial emotions used for training an emotion-aware AI
+    Collect google images of three additional facial emotions used for training an emotion-aware AI
 """
 
 import os
@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
 
 def detect_face(image):
     """Detects the largest face in an image and returns the cropped face."""
@@ -30,18 +31,23 @@ def detect_face(image):
     face = face.resize((48, 48))
     return face
 
-def download_and_process_images(query, api_key, cse_id, num_images, output_csv):
+def download_and_process_images(query, api_key, cse_id, num_images, output_csv, img_class):
     """
     Downloads images from Google Images for a specific query, detects faces,
-    processes them into FER2013 format, and saves them in a CSV file.
+    processes them into FER2013 format, and appends them to a CSV file.
     """
     service = build("customsearch", "v1", developerKey=api_key)
+    existing_rows = set()
 
-    with open(output_csv, mode="w", newline="") as csvfile:
+    with open(output_csv, mode="a", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["emotion", "pixels"])  # Write the header
+        if os.stat(output_csv).st_size == 0:
+            writer.writerow(["emotion", "pixels"])  # Write header if file is empty
 
-        for start in range(1, num_images + 1, 10):
+        start_indices = list(range(1, num_images + 1, 10))
+        random.shuffle(start_indices)  # Shuffle the start indices to randomize results
+
+        for start in start_indices:
             result = service.cse().list(
                 q=query,
                 cx=cse_id,
@@ -63,7 +69,10 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv):
                     
                     pixel_array = np.array(face).flatten()
                     pixel_str = " ".join(map(str, pixel_array))
-                    writer.writerow([7, pixel_str])
+                    
+                    if pixel_str not in existing_rows:
+                        writer.writerow([img_class, pixel_str])
+                        existing_rows.add(pixel_str)
                 
                 except Exception as e:
                     print(f"Error processing image: {e}")
@@ -98,12 +107,13 @@ if __name__ == "__main__":
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
-    EMOTION_QUERY = "boredom face"
-    NUM_IMAGES = 5
-    OUTPUT_CSV = "boredom_images.csv"
+    EMOTION_QUERY = "boredom human face"
+    NUM_IMAGES = 1000
+    OUTPUT_CSV = "boredom_ggl.csv"
+    IMG_CLS = 7
 
-    # download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV)
+    download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
 
-    # print(f"Images processed and saved to {OUTPUT_CSV}")
+    print(f"Images processed and saved to {OUTPUT_CSV}")
 
-    verify_images(OUTPUT_CSV)
+    # verify_images(OUTPUT_CSV)
