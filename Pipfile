@@ -8,6 +8,9 @@ google-api-python-client = "*"
 pillow = "*"
 numpy = "*"
 python-dotenv = "*"
+opencv-python = "*"
+pandas = "*"
+matplotlib = "*"
 
 [dev-packages]
 

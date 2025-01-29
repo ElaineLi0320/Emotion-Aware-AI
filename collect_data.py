@@ -12,6 +12,10 @@ from googleapiclient.discovery import build
 from PIL import Image, ImageOps
 from dotenv import load_dotenv
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
 def detect_face(image):
     """Detects the largest face in an image and returns the cropped face."""
     gray = np.array(image)
@@ -64,6 +68,28 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv):
                 except Exception as e:
                     print(f"Error processing image: {e}")
 
+def verify_images(csv_file):
+    """
+    Opens the saved images from the CSV file and allows the user to accept or reject them.
+    If rejected, removes the corresponding row from the CSV file.
+    """
+    df = pd.read_csv(csv_file)
+
+    for index, row in df.iterrows():
+        pixel_values = np.fromstring(row["pixels"], sep=" ", dtype=np.uint8)
+        image = pixel_values.reshape(48, 48)  # Reshape to 48x48
+        
+        plt.imshow(image, cmap="gray")
+        plt.axis("off")
+        plt.show()
+
+        decision = input("Accept this image? (y/n): ").strip().lower()
+        if decision == "n":
+            df.drop(index, inplace=True)  # Remove the row
+
+    # Save the updated CSV
+    df.to_csv(csv_file, index=False)
+
 if __name__ == "__main__":
     load_dotenv()
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -73,9 +99,11 @@ if __name__ == "__main__":
         raise ValueError("Missing API credentials. Check your .env file.")
 
     EMOTION_QUERY = "boredom face"
-    NUM_IMAGES = 50
+    NUM_IMAGES = 5
     OUTPUT_CSV = "boredom_images.csv"
 
-    download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV)
+    # download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV)
 
-    print(f"Images processed and saved to {OUTPUT_CSV}")
+    # print(f"Images processed and saved to {OUTPUT_CSV}")
+
+    verify_images(OUTPUT_CSV)
