@@ -17,8 +17,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 
+import argparse
+
 def detect_face(image):
-    """Detects the largest face in an image and returns the cropped face."""
+    """
+        Detects the largest face in an image and returns the cropped face.
+
+        image: PIL image object
+    """
     gray = np.array(image)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -33,8 +39,15 @@ def detect_face(image):
 
 def download_and_process_images(query, api_key, cse_id, num_images, output_csv, img_class):
     """
-    Downloads images from Google Images for a specific query, detects faces,
-    processes them into FER2013 format, and appends them to a CSV file.
+        Downloads images from Google Images for a specific query, detects faces,
+        processes them into FER2013 format, and appends them to a CSV file.
+
+        query: Google Image search string
+        api_key: Google API key
+        cse_id: Custom search engine ID
+        num_images: Total number of images to collect
+        output_csv: name of csv file to store output
+        image_class: integer indicating the class lable of emotion
     """
     service = build("customsearch", "v1", developerKey=api_key)
     existing_rows = set()
@@ -92,10 +105,13 @@ def download_and_process_images(query, api_key, cse_id, num_images, output_csv, 
                 except Exception as e:
                     print(f"Error processing image: {e}")
 
-def verify_images(csv_file):
+def verify_images(csv_file, audit=True):
     """
-    Opens the saved images from the CSV file and allows the user to accept or reject them.
-    If rejected, removes the corresponding row from the CSV file.
+        Opens the saved images from the CSV file and allows the user to accept or reject them.
+        If rejected, removes the corresponding row from the CSV file.
+
+        csv_file: csv file where each row consists of an integer label column and image pixel column
+        audit: view images without modifying the file if False
     """
     df = pd.read_csv(csv_file)
 
@@ -107,15 +123,28 @@ def verify_images(csv_file):
         plt.axis("off")
         plt.show()
 
-        decision = input("Accept this image? (y/n): ").strip().lower()
-        if decision == "n":
-            df.drop(index, inplace=True)  # Remove the row
+        if audit:
+            decision = input("Accept this image? (y/n): ").strip().lower()
+            if decision == "n":
+                df.drop(index, inplace=True)  # Remove the row
 
     # Save the updated CSV
     df.to_csv(csv_file, index=False)
 
+def parse_arg():
+    """
+        A utility function that processes command line arguments
+    """
+    parser = argparse.ArgumentParser(prog="Image Collector", description="Collect, audit or view images")
+    parser.add_argument("-mode", nargs="?", default="collect")
+
+    return parser.parse_args()
+
 if __name__ == "__main__":
     load_dotenv()
+    args = parse_arg()
+    mode = args.mode
+
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
 
@@ -124,11 +153,13 @@ if __name__ == "__main__":
 
     EMOTION_QUERY = "frustration human face"
     NUM_IMAGES = 1000
-    OUTPUT_CSV = "frustration_ggl.csv"
+    OUTPUT_CSV = "data/frustration_ggl.csv"
     IMG_CLS = 1
 
-    # download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
-
-    # print(f"Images processed and saved to {OUTPUT_CSV}")
-
-    verify_images(OUTPUT_CSV)
+    if mode == 'collect':
+        download_and_process_images(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
+        print(f"Images processed and saved to {OUTPUT_CSV}")
+    elif mode == 'audit':
+        verify_images(OUTPUT_CSV)
+    elif mode == 'view':
+        verify_images(OUTPUT_CSV, False)
