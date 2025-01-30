@@ -80,7 +80,7 @@ def get_images_ggl(query, api_key, cse_id, num_images, output_csv, img_class):
                         searchType="image",
                         num=10,
                         start=start,
-                        imgSize='medium'
+                        imgSize='MEDIUM'
                     ).execute()
 
                     for item in result.get("items", []):
@@ -149,19 +149,22 @@ if __name__ == "__main__":
 
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
+    BASE_PATH = 'data/'
 
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
-    EMOTION_QUERY = "frustration" # Change the query string for other emotions
-    NUM_IMAGES = 1000
-    OUTPUT_CSV = f"data/fer2013.csv" # Change file name to match search results
-    IMG_CLS = 1 # Change to other emotion classes
-
     if mode == 'collect':
-        get_images_ggl(EMOTION_QUERY, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, NUM_IMAGES, OUTPUT_CSV, IMG_CLS)
-        print(f"Images processed and saved to {OUTPUT_CSV}")
+        emotion_query = input("Emotion: ")
+        num_img = int(input("Numer of images: "))
+        output_csv = input("Output File: ")
+        img_cls = int(input("Image Class: "))
+        get_images_ggl(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
+                       num_img, os.path.join(BASE_PATH, output_csv), img_cls)
+        print(f"Images processed and saved to {output_csv}")
     elif mode == 'audit':
-        verify_images(OUTPUT_CSV)
+        file = input("File to Open: ")
+        verify_images(os.path.join(BASE_PATH, file))
     elif mode == 'view':
-        verify_images(OUTPUT_CSV, False)
+        file = input("File to Open: ")
+        verify_images(os.path.join(BASE_PATH, file), False)
