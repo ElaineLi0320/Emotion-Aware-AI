@@ -34,7 +34,7 @@ def detect_face(image):
     
     x, y, w, h = faces[0]  # Assume the first detected face is the primary one
     face = image.crop((x, y, x + w, y + h))
-    face = face.resize((48, 48))
+    face = face.resize((48, 48), Image.Resampling.LANCZOS) # Apply a smoother downscaling filter
     return face
 
 def get_images_ggl(query, api_key, cse_id, num_images, output_csv, img_class):
@@ -79,7 +79,8 @@ def get_images_ggl(query, api_key, cse_id, num_images, output_csv, img_class):
                         cx=cse_id,
                         searchType="image",
                         num=10,
-                        start=start
+                        start=start,
+                        imgSize='medium'
                     ).execute()
 
                     for item in result.get("items", []):
@@ -154,7 +155,7 @@ if __name__ == "__main__":
 
     EMOTION_QUERY = "frustration" # Change the query string for other emotions
     NUM_IMAGES = 1000
-    OUTPUT_CSV = f"data/{EMOTION_QUERY}_ggl.csv" # Change file name to match search results
+    OUTPUT_CSV = f"data/fer2013.csv" # Change file name to match search results
     IMG_CLS = 1 # Change to other emotion classes
 
     if mode == 'collect':

@@ -1,2 +1,8 @@
 # Exclude hidden environment variables
 .env
+
+# Exclude system generated files
+.DS_Store
+
+# Ignore the FER2013 file for now
+data/fer2013.csv
