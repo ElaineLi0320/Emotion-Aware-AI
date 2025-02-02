@@ -2,7 +2,7 @@ import argparse
 from dotenv import load_dotenv
 import os
 
-from data_collector import DataCollector, verify_images
+from data_collector import DataCollector, verify_images, concat_csv
 
 def parse_arg():
     """
@@ -38,3 +38,6 @@ if __name__ == "__main__":
     elif mode == 'view':
         file = input("File to Open: ")
         verify_images(os.path.join(BASE_PATH, file), False)
+    elif mode == 'concat':
+        output_csv = input("Name of Combined Files: ")
+        concat_csv(BASE_PATH, output_csv)
