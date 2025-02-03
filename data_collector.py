@@ -50,13 +50,16 @@ class DataCollector:
             writer.writerow(["emotion", "pixels"])
 
             queries = [self.query, self.query + " face", self.query + " facial expression", self.query + " faces men", 
-                    self.query + " faces women", self.query + " emotion"]
+                    self.query + " faces women", self.query + " emotion", self.query + " student", self.query + " chinese"]
             random.shuffle(queries)  # Randomize queries to get diverse images
 
             for q in queries:
+                # ========== DEBUGGING ============
                 print(f"Query selected: {q}")
 
-                for start in range(1, 91, 10):  # Google API allows up to start=90 (for 100 results max per query)
+                # Adjust starting index in each query to prevent duplicates
+                for start in range(1, 91, 10):  
+                    # ========== DEBUGGING ===========
                     print(f"Starting index: {start}")
 
                     try:
@@ -66,7 +69,8 @@ class DataCollector:
                             searchType="image",
                             num=10,
                             start=start,
-                            imgSize='MEDIUM'
+                            imgSize='MEDIUM',
+                            imgType='face'
                         ).execute()
 
                         for item in result.get("items", []):

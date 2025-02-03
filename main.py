@@ -18,6 +18,7 @@ if __name__ == "__main__":
     args = parse_arg()
     mode = args.mode
 
+    # Set global variables
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
     BASE_PATH = "data/"
@@ -25,6 +26,7 @@ if __name__ == "__main__":
     if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
         raise ValueError("Missing API credentials. Check your .env file.")
 
+    # Branch to different function calls based on user input
     if mode == 'collect':
         emotion_query = input("Emotion: ")
         output_csv = input("Output File: ")
