@@ -57,3 +57,29 @@ def concat_csv(file_dir, output_file):
 
     df_new.to_csv(os.path.join(file_dir, output_file), index=False)
     print(f"A total of {total_rows} images has been saved to {output_file}")
+
+def tally(emo_list, base_path):
+    """
+        Compute a tally of records for each emotion category
+
+        emo_list: a list of string emotions
+    """
+    ptn = re.compile(r"\b[a-z]+_[a-z]+_bt([0-9]+)\.csv\b")
+
+    for emo in emo_list:
+        running_total = 0
+        print(f"\nCategory: {emo}")
+        for csv in os.listdir(base_path):
+            if ptn.fullmatch(csv) and csv.startswith(emo):
+                df = pd.read_csv(os.path.join(base_path, csv))
+                running_total += len(df.index)
+        print(f"Total images collected: {running_total}\n")
+
+def display_menu():
+    """
+        Display program menus to users
+    """
+    print("================= Program Menu ===================")
+    print("1, Collect images\n2, Aduit images\n3, View images\n4, Concat mini-batch files\n5, Tally images")
+
+    
