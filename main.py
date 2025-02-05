@@ -32,7 +32,7 @@ if __name__ == "__main__":
         output_csv = input("Output File: ")
         img_cls = int(input("Image Class: "))
         collector = DataCollector(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
-                              output_csv, img_cls)
+                              output_csv, img_cls, num_images=50)
         collector.collect()
     elif mode == 'audit':
         file = input("File to Open: ")

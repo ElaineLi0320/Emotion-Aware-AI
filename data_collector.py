@@ -41,24 +41,31 @@ class DataCollector:
             query string 
         """
         service = build("customsearch", "v1", developerKey=self.api_key)
-        existing_rows = set()
         self._total_fetched = 0
+        # Set a plain text file to store urls that are already visited
+        url_file = os.path.join(self.base_path, "img_urls.txt")
+
+        # Read visited urls if the file exists
+        if os.path.exists(url_file):
+            with open(url_file, "r") as f:
+                seen_urls = set(f.read().splitlines())
+        else:
+            seen_urls = set()
 
         with open(self._csv_fullpath, mode="w", newline="") as csvfile:
             writer = csv.writer(csvfile)
             # Write header 
             writer.writerow(["emotion", "pixels"])
+            self.create_queries()
 
-            queries = [self.query, self.query + " face", self.query + " facial expression", self.query + " faces men", 
-                    self.query + " faces women", self.query + " emotion", self.query + " student", self.query + " chinese"]
-            random.shuffle(queries)  # Randomize queries to get diverse images
-
-            for q in queries:
+            for q in self.queries_:
                 # ========== DEBUGGING ============
                 print(f"Query selected: {q}")
 
-                # Adjust starting index in each query to prevent duplicates
-                for start in range(1, 91, 10):  
+                start_indices = [random.randint(1, 90) for _ in range(self.num_images // 10)]
+                random.shuffle(start_indices)
+                # Adjust starting index in each query to reduce duplicates
+                for start in start_indices: 
                     # ========== DEBUGGING ===========
                     print(f"Starting index: {start}")
 
@@ -78,6 +85,16 @@ class DataCollector:
                                 return
 
                             img_url = item["link"]
+
+                            # Check if the feteched url is already visited
+                            if img_url in seen_urls:
+                                continue
+                            
+                            # Otherwise add it to seen_urls
+                            seen_urls.add(img_url)
+                            with open(url_file, "a") as f:
+                                f.write(img_url + "\n")
+
                             response = requests.get(img_url, timeout=10)
                             img = Image.open(io.BytesIO(response.content))
                             img = ImageOps.grayscale(img)
@@ -88,14 +105,26 @@ class DataCollector:
                             
                             pixel_array = np.array(face).flatten()
                             pixel_str = " ".join(map(str, pixel_array))
-                            
-                            if pixel_str not in existing_rows:
-                                writer.writerow([self.img_class, pixel_str])
-                                existing_rows.add(pixel_str)
-                                self._total_fetched += 1
+                            writer.writerow([self.img_class, pixel_str])
+                            self._total_fetched += 1
                     
                     except Exception as e:
                         print(f"Error processing image: {e}")
+
+    def create_queries(self):
+        """
+            Create a diverse query pools to avoid duplicate queries across multiple runs
+        """
+        self.queries_ = [
+                    self.query, self.query + " face", self.query + " facial expression", 
+                    self.query + " faces men", self.query + " faces women", 
+                    self.query + " emotion", self.query + " student",
+                    self.query + " mood", self.query + " headshot", 
+                    self.query + " close-up",  self.query + " candid moment", 
+                    self.query + " natural emotion", self.query + " portrait"
+                ]
+        random.shuffle(self.queries_)
+        
 
     def _detect_face(self, image):
         """
@@ -148,8 +177,6 @@ def verify_images(csv_file, audit=True):
 def concat_csv(file_dir, output_file):
     """
         Check if there are five mini-batch files and combine them for double check 
-
-        
     """
     # Match file names like "boredom_ggl_1.csv"
     pattern = re.compile(r"\b[a-z]+_[a-z]+_([0-9]+)\.csv\b")
