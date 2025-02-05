@@ -2,7 +2,8 @@ import argparse
 from dotenv import load_dotenv
 import os
 
-from data_collector import DataCollector, verify_images, concat_csv
+from data_collector import DataCollector
+from util import verify_images, concat_csv
 
 def parse_arg():
     """

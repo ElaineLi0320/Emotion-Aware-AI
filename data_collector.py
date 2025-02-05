@@ -1,19 +1,17 @@
 """
-    A class that encapsulates essential functions for collecting images from Google Image 
+    A class that encapsulates essential functions for collecting images via Google Image API
 """
+
 import os
 import csv
 import io
-import re
 import cv2
 import numpy as np
 import requests
 import random
-import pandas as pd
 
 from googleapiclient.discovery import build
 from PIL import Image, ImageOps
-import matplotlib.pyplot as plt
 
 class DataCollector:
 
@@ -43,7 +41,7 @@ class DataCollector:
         service = build("customsearch", "v1", developerKey=self.api_key)
         self._total_fetched = 0
         # Set a plain text file to store urls that are already visited
-        url_file = os.path.join(self.base_path, "img_urls.txt")
+        url_file = os.path.join(self.base_path, f"{self.query}_img_urls.txt")
 
         # Read visited urls if the file exists
         if os.path.exists(url_file):
@@ -60,14 +58,14 @@ class DataCollector:
 
             for q in self.queries_:
                 # ========== DEBUGGING ============
-                print(f"Query selected: {q}")
+                print(f"\nQuery selected: {q}")
 
                 start_indices = [random.randint(1, 90) for _ in range(self.num_images // 10)]
                 random.shuffle(start_indices)
                 # Adjust starting index in each query to reduce duplicates
                 for start in start_indices: 
                     # ========== DEBUGGING ===========
-                    print(f"Starting index: {start}")
+                    print(f"Starting index: {start}\n")
 
                     try:
                         result = service.cse().list(
@@ -144,52 +142,3 @@ class DataCollector:
         face = face.resize((48, 48), Image.Resampling.LANCZOS) # Apply a smoother downscaling filter
         return face
 
-def verify_images(csv_file, audit=True):
-    """
-        Opens the saved images from the CSV file and allows the user to accept or reject them.
-        If rejected, removes the corresponding row from the CSV file.
-
-        csv_file: csv file where each row consists of an integer label column and image pixel column
-        audit: view images without modifying the file if False
-    """
-    df = pd.read_csv(csv_file)
-    rows = len(df.index)
-
-    for index, row in df.iterrows():
-        pixel_values = np.fromstring(row["pixels"], sep=" ", dtype=np.uint8)
-        image = pixel_values.reshape(48, 48)  # Reshape to 48x48
-        
-        plt.imshow(image, cmap="gray")
-        plt.axis("off")
-        plt.title(f"Image {index}/{rows}")
-        plt.show()
-
-        if audit:
-            decision = input("Accept this image? (y/n): ").strip().lower()
-            if decision == "n":
-                df.drop(index, inplace=True)  # Remove the row
-
-    # Save the updated CSV
-    if audit:
-        df.to_csv(csv_file, index=False)
-        print(f"\nSummary: {len(df.index)} out of {rows} were kept.")
-
-def concat_csv(file_dir, output_file):
-    """
-        Check if there are five mini-batch files and combine them for double check 
-    """
-    # Match file names like "boredom_ggl_1.csv"
-    pattern = re.compile(r"\b[a-z]+_[a-z]+_([0-9]+)\.csv\b")
-    total_rows = 0
-
-    df_new = pd.DataFrame(columns=["emotion", "pixels"])
-    for csv in os.listdir(file_dir):
-        if pattern.fullmatch(csv):
-            full_path = os.path.join(file_dir, csv)
-            df = pd.read_csv(full_path)
-            total_rows += len(df.index)
-            df_new = pd.concat([df_new, df], ignore_index=True)
-            os.remove(full_path)
-
-    df_new.to_csv(os.path.join(file_dir, output_file), index=False)
-    print(f"A total of {total_rows} images has been saved to {output_file}")
