@@ -16,6 +16,10 @@ def verify_images(csv_file, audit=True):
         csv_file: csv file where each row consists of an integer label column and image pixel column
         audit: view images without modifying the file if False
     """
+    # Make sure provided file exists
+    if not os.path.exists(csv_file):
+        raise ValueError(f"{csv_file} doesn't exist. Please provide a right file name.")
+
     df = pd.read_csv(csv_file)
     rows = len(df.index)
 
@@ -75,18 +79,25 @@ def tally(emo_list, base_path):
         print(f"\nCategory: {emo}")
         # Get the directory an emotion category is in
         dire = os.path.join(base_path, emo)
-        
+
         for csv in os.listdir(dire):
             if ptn.fullmatch(csv) and csv.startswith(emo):
                 df = pd.read_csv(os.path.join(dire, csv))
                 running_total += len(df.index)
         print(f"Total images collected: {running_total}\n")
 
+def show_all_files(dir):
+    """
+        Display all csv image files in a directory
+    """
+    for file in os.listdir(dir):
+        print(file)
+
 def display_menu():
     """
         Display program menus to users
     """
     print("================= Program Menu ===================")
-    print("1, Collect images\n2, Audit images\n3, View images\n4, Combine mini-batch files\n5, Tally images")
+    print("1) Collect images\n2) Audit images\n3) View images\n4) Combine mini-batch files\n5) Tally images\n6) Cross check")
 
     

@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 
 from data_collector import DataCollector
-from util import verify_images, concat_csv, display_menu, tally
+from util import verify_images, concat_csv, display_menu, tally, show_all_files
 
 if __name__ == "__main__":
     load_dotenv()
@@ -18,7 +18,7 @@ if __name__ == "__main__":
         raise ValueError("Missing API credentials. Check your .env file.")
 
     display_menu()
-    mode = int(input("Select an option[1-5]: ").strip())
+    mode = int(input("Select an option[1-6]: ").strip())
     
     # Branch to different function calls based on user input
     if mode == 1:
@@ -30,6 +30,7 @@ if __name__ == "__main__":
         collector.collect()
     elif mode == 2:
         file = input("\nFile to Open: ").strip()
+        # Extract sub-folder from user input
         emo = file.split("_")[0]
         verify_images(os.path.join(BASE_PATH, emo, file))
     elif mode == 3:
@@ -42,3 +43,8 @@ if __name__ == "__main__":
         concat_csv(os.path.join(BASE_PATH, emo), output_csv)
     elif mode == 5:
         tally(EMOTIONS, BASE_PATH)
+    elif mode == 6:
+        emo = input("\nEmotion Category: ").strip()
+        show_all_files(os.path.join(BASE_PATH, emo))
+        file_name = input("File to check: ").strip()
+        verify_images(os.path.join(BASE_PATH, emo, file_name))
