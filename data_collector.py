@@ -31,7 +31,7 @@ class DataCollector:
         self.img_class = img_class
         self.num_images = num_images
         self.base_path = base_path
-        self._csv_fullpath = os.path.join(self.base_path, self.csv_file)
+        self._csv_fullpath = os.path.join(self.base_path, self.query, self.csv_file)
 
     def collect(self):
         """
@@ -41,7 +41,7 @@ class DataCollector:
         service = build("customsearch", "v1", developerKey=self.api_key)
         self._total_fetched = 0
         # Set a plain text file to store urls that are already visited
-        url_file = os.path.join(self.base_path, f"{self.query}_img_urls.txt")
+        url_file = os.path.join(self.base_path, self.query, f"{self.query}_img_urls.txt")
 
         # Read visited urls if the file exists
         if os.path.exists(url_file):
