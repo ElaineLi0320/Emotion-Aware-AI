@@ -73,9 +73,12 @@ def tally(emo_list, base_path):
     for emo in emo_list:
         running_total = 0
         print(f"\nCategory: {emo}")
-        for csv in os.listdir(base_path):
+        # Get the directory an emotion category is in
+        dire = os.path.join(base_path, emo)
+        
+        for csv in os.listdir(dire):
             if ptn.fullmatch(csv) and csv.startswith(emo):
-                df = pd.read_csv(os.path.join(base_path, csv))
+                df = pd.read_csv(os.path.join(dire, csv))
                 running_total += len(df.index)
         print(f"Total images collected: {running_total}\n")
 

@@ -22,20 +22,23 @@ if __name__ == "__main__":
     
     # Branch to different function calls based on user input
     if mode == 1:
-        emotion_query = input("\nEmotion: ")
-        output_csv = input("Output File: ")
-        img_cls = int(input("Image Class: "))
+        emotion_query = input("\nEmotion: ").strip()
+        output_csv = input("Output File: ").strip()
+        img_cls = int(input("Image Class: ").strip())
         collector = DataCollector(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
                               output_csv, img_cls, num_images=50)
         collector.collect()
     elif mode == 2:
-        file = input("\nFile to Open: ")
-        verify_images(os.path.join(BASE_PATH, file))
+        file = input("\nFile to Open: ").strip()
+        emo = file.split("_")[0]
+        verify_images(os.path.join(BASE_PATH, emo, file))
     elif mode == 3:
-        file = input("\nFile to Open: ")
-        verify_images(os.path.join(BASE_PATH, file), False)
+        file = input("\nFile to Open: ").strip()
+        emo = file.split("_")[0]
+        verify_images(os.path.join(BASE_PATH, emo, file), False)
     elif mode == 4:
-        output_csv = input("\nName of Combined Files: ")
-        concat_csv(BASE_PATH, output_csv)
+        output_csv = input("\nName of Combined Files: ").strip()
+        emo = input("\nEmotion Category: ").strip()
+        concat_csv(os.path.join(BASE_PATH, emo), output_csv)
     elif mode == 5:
         tally(EMOTIONS, BASE_PATH)
