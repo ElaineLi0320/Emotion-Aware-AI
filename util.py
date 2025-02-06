@@ -25,7 +25,7 @@ def verify_images(csv_file, audit=True):
         
         plt.imshow(image, cmap="gray")
         plt.axis("off")
-        plt.title(f"Image {index}/{rows}")
+        plt.title(f"Image {index+1}/{rows}")
         plt.show()
 
         if audit:
@@ -55,8 +55,12 @@ def concat_csv(file_dir, output_file):
             df_new = pd.concat([df_new, df], ignore_index=True)
             os.remove(full_path)
 
-    df_new.to_csv(os.path.join(file_dir, output_file), index=False)
-    print(f"A total of {total_rows} images has been saved to {output_file}")
+    full_path = os.path.join(file_dir, output_file)
+    if os.path.exists(full_path):
+        print("File {full_path} already exists. Operation aborted.")
+    else:
+        df_new.to_csv(full_path, index=False)
+        print(f"A total of {total_rows} images has been saved to {output_file}")
 
 def tally(emo_list, base_path):
     """
@@ -80,6 +84,6 @@ def display_menu():
         Display program menus to users
     """
     print("================= Program Menu ===================")
-    print("1, Collect images\n2, Aduit images\n3, View images\n4, Concat mini-batch files\n5, Tally images")
+    print("1, Collect images\n2, Audit images\n3, View images\n4, Combine mini-batch files\n5, Tally images")
 
     
