@@ -90,6 +90,7 @@ def show_all_files(dir):
     """
         Display all csv image files in a directory
     """
+    print("\nAll files in current directory:")
     for file in os.listdir(dir):
         print(file)
 
