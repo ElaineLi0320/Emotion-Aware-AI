@@ -38,7 +38,7 @@ if __name__ == "__main__":
         verify_images(os.path.join(BASE_PATH, emo, file), False)
     elif mode == 4:
         output_csv = input("\nName of Combined Files: ").strip()
-        emo = input("\nEmotion Category: ").strip()
+        emo = output_csv.split("_")[0]
         concat_csv(os.path.join(BASE_PATH, emo), output_csv)
     elif mode == 5:
         tally(EMOTIONS, BASE_PATH)
@@ -47,3 +47,6 @@ if __name__ == "__main__":
         show_all_files(os.path.join(BASE_PATH, emo))
         file_name = input("File to check: ").strip()
         verify_images(os.path.join(BASE_PATH, emo, file_name))
+    else:
+        print("Option must be an integer between 1 and 6. Exiting...")
+        exit(1)

@@ -47,7 +47,11 @@ def concat_csv(file_dir, output_file):
         Check if there are five/two mini-batch files and combine them for double check 
     """
     # Match file names like "boredom_ggl_1.csv"
-    pattern = re.compile(r"\b[a-z]+_[a-z]+_([0-9]+)\.csv\b")
+    output_path = os.path.join(file_dir, output_file)
+    if os.path.exists(output_path):
+        raise FileExistsError(f"File {output_path} already exists. Operation aborted.")
+
+    pattern = re.compile(r"\b[a-z]+_([0-9]+)\.csv\b")
     total_rows = 0
 
     df_new = pd.DataFrame(columns=["emotion", "pixels"])
@@ -59,12 +63,9 @@ def concat_csv(file_dir, output_file):
             df_new = pd.concat([df_new, df], ignore_index=True)
             os.remove(full_path)
 
-    full_path = os.path.join(file_dir, output_file)
-    if os.path.exists(full_path):
-        print("File {full_path} already exists. Operation aborted.")
-    else:
-        df_new.to_csv(full_path, index=False)
-        print(f"A total of {total_rows} images has been saved to {output_file}")
+    
+    df_new.to_csv(output_path, index=False)
+    print(f"A total of {total_rows} images has been saved to {output_file}")
 
 def tally(emo_list, base_path):
     """
