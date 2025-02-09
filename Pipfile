@@ -11,8 +11,9 @@ python-dotenv = "*"
 opencv-python = "*"
 pandas = "*"
 matplotlib = "*"
-argparse = "*"
 urllib3 = "==1.26.6"
+torch = "*"
+torchvision = "*"
 
 [dev-packages]
 
