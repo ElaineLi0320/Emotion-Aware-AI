@@ -8,25 +8,25 @@ if __name__ == "__main__":
     load_dotenv()
 
     # Set global variables
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
+    # GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # CUSTOM_SEARCH_ENGINE_ID = os.getenv("CUSTOM_SEARCH_ENGINE_ID")
     BASE_PATH = "data/"
     EMOTIONS = ["frustration", "boredom"]
 
-    if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
-        raise ValueError("Missing API credentials. Check your .env file.")
+    # if not GOOGLE_API_KEY or not CUSTOM_SEARCH_ENGINE_ID:
+    #     raise ValueError("Missing API credentials. Check your .env file.")
 
     display_menu()
     mode = int(input("Select an option[1-6]: ").strip())
     
     # Branch to different function calls based on user input
-    if mode == 1:
-        emotion_query = input("\nEmotion: ").strip()
-        output_csv = input("Output File: ").strip()
-        img_cls = int(input("Image Class: ").strip())
-        collector = DataCollector(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
-                              output_csv, img_cls, num_images=50)
-        collector.collect()
+    # if mode == 1:
+    #     emotion_query = input("\nEmotion: ").strip()
+    #     output_csv = input("Output File: ").strip()
+    #     img_cls = int(input("Image Class: ").strip())
+    #     collector = DataCollector(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
+    #                           output_csv, img_cls, num_images=50)
+    #     collector.collect()
     elif mode == 2:
         file = input("\nFile to Open: ").strip()
         # Extract sub-folder from user input
