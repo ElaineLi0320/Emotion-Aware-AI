@@ -13,3 +13,6 @@ data/fer2013_filtered.csv
 
 # Ignore pip files
 Pipfile*
+
+# Interpreter generated files
+__pycache__/
