@@ -27,7 +27,7 @@ if __name__ == "__main__":
     #     collector = DataCollector(emotion_query, GOOGLE_API_KEY, CUSTOM_SEARCH_ENGINE_ID, 
     #                           output_csv, img_cls, num_images=50)
     #     collector.collect()
-    elif mode == 2:
+    if mode == 2:
         file = input("\nFile to Open: ").strip()
         # Extract sub-folder from user input
         emo = file.split("_")[0]
