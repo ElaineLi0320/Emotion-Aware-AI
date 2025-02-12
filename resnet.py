@@ -2,8 +2,6 @@
     An implementation of ResEmoteNet based on the GitHub repo of the paper that 
     introduced it for FER classisfication.
 """
-
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -20,7 +18,7 @@ class SEBlock(nn.Module):
             out_ch: dimension of output channel
             r: reduction ratio
         """
-        super(self).__init__()
+        super().__init__()
         # Define an average pooling layer
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         # Define a sequential layer that learns the relationship between channels
@@ -45,7 +43,7 @@ class ResidualBlock(nn.Module):
         Residual network to tackle performance degradation
     """
     def __init__(self, in_ch, out_ch, stride=1):
-        super(self).__init__()
+        super().__init__()
         # Define residual function
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=1)
         self.norm1 = nn.BatchNorm2d(out_ch)
@@ -73,7 +71,7 @@ class ResEmoteNet(nn.Module):
         three residual net blocks
     """
     def __init__(self):
-        super(self).__init__()
+        super().__init__()
         # First conv layer followed by batch norm layer 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
