@@ -1,50 +1,188 @@
 """
-    Prepare data for model training
-    
-    emotion_labels = {
-    "Angry": 0,
-    "Frustration": 1,
-    "Boredom": 2,
-    "Happy": 3,
-    "Sad": 4,
-    "Surprise": 5,
-    "Neutral": 6,
-}
+    Prepare data and start model training
 """
 import os
+import tqdm
 import torch
 from custom_dataset import CustomDataset
 from resnet import ResEmoteNet
 
-# Check for GPU availability
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-print(f"Using {device} device")
+import pandas as pd
 
 # Define globla variables used across this program
 BASE_PATH = "data/"
 BATCH_SIZE = 16
+EPOCHS = 80
+
+# Check for GPU availability
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+print("=========== Pre-training Info =============")
+print(f"Using {device} device...")
 
 # ============= OPTIONAL: build a data transformation pipeline ============
 
-# Split dataset into train and test subset
+# Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
 full_ds = CustomDataset(os.path.join(BASE_PATH, "fer2013_filtered.csv"))
-train_ds, test_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
+train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
+val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
 
-# Create a dataloader for training set
+# Create a dataloader for training, validation and test set
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-train_image, train_label = next(iter(train_dl))
+val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=True)
+test_dl = torch.utils.data.DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
-# Create a dataloader for test set
-test_ds = torch.utils.data.DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=True)
-test_image, test_label = next(iter(test_ds))
+# Check their dimension
+print(f"Train Samples: {len(train_ds)}")
+print(f"Validation Samples: {len(val_ds)}")
+print(f"Test Samples: {len(test_ds)}")
 
-# Check the dimension of train and test dataset 
-print(f"Train batch: Image shape {train_image.shape}, Label shape {train_label.shape}")
-print(f"Test batch: Image shape {test_image.shape}, Label shape {test_label.shape}")
-
-# Load a model
+# Load our model
 model = ResEmoteNet().to(device)
 
 # Show total number of parameters
 total_params = sum(p.numel() for p in model.parameters())
-print(f"Total Params: {total_params:,}")
+print(f"Model Total Params: {total_params:,}")
+
+# Configure loss function and optimizer
+loss_fn = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=1e-4)
+
+# ====================================== START TRAINING ==================================
+# Keep track of loss and accuracy in different modes
+training_losses = []
+training_accuracies = []
+validation_losses = []
+validation_accuracies = []
+test_losses = []
+test_accuracies = []
+
+# Record best validation accuracy
+best_val_acc = 0
+
+# Record total number of epochs in case of early termination
+epoch_actual = 0
+
+# Set maximum intervals between epochs for accuracy improvement before triggering early termination
+max_interval = 15
+
+# Cumulative interval
+cumu_interval = 0
+
+# Start training
+for epoch in range(EPOCHS):
+    print("=========== Training Info =============")
+    # Activate training mode
+    model.train()
+
+    running_loss = 0
+    # Number of correct predictions
+    acc = 0
+    # total number of samples
+    total = 0
+
+    for data in tqdm(train_dl, desc=f"Epoch {epoch+1}/{EPOCHS}"):
+        inputs, labels = data[0].to(device), data[1].to(device)
+
+        # Reset gradients to zero
+        optimizer.zero_grad()
+
+        # Generate perdictions
+        output = model(inputs)
+
+        # Compute loss
+        loss = loss_fn(output, labels)
+
+        # Initiate backpropagation
+        loss.backward()
+
+        # Update weights
+        optimizer.step()
+
+        # Update loss and accuracy for current epoch
+        running_loss += loss.item()
+        _, pred = torch.max(output.detach(), 1)
+        acc += (pred == labels).sum().item()
+        total += labels.size[0]
+
+    # Record loss and accuracy in current epoch
+    train_loss = running_loss / len(train_dl)
+    train_acc = acc / total 
+    training_losses.append(train_loss)
+    training_accuracies.append(train_acc)
+
+    # Activate evaluation mode for validation set
+    model.eval()
+
+    running_loss_val = 0
+    acc_val = 0
+    total_val = 0
+
+    with torch.no_grad():
+        for data in val_dl:
+            inputs, labels = data[0].to(device), data[1].to(device)
+            output = model(inputs)
+            loss = loss_fn(output, labels)
+            
+            running_loss_val += loss.item()
+            _, pred = torch.max(output.detach(), 1)
+            acc_val += (pred == labels).sum().item()
+            total_val += labels.size[0]
+
+    val_loss = running_loss_val / len(val_dl)
+    val_acc = acc_val / total_val
+    validation_losses.append(val_loss)
+    validation_accuracies.append(val_acc)
+
+    # Activate evaluation for test set
+    model.eval()
+
+    running_loss_test = 0
+    acc_test = 0
+    total_test = 0
+
+    with torch.no_grad():
+        for data in test_dl:
+            inputs, labels = data[0].to(device), data[1].to(device)
+            output = model(inputs)
+            loss = loss_fn(output, labels)
+
+            running_loss_test += loss
+            _, pred = torch.max(output.detach(), 1)
+            acc_test += (pred == labels).sum().item()
+            total_test += labels.size[0]
+    
+    test_loss = running_loss_test / len(test_dl)
+    test_acc = acc_test / total_test
+    test_losses.append(test_loss)
+    test_accuracies.append(test_acc)
+
+    print(f"Epoch {epoch}: train loss {train_loss}, train accuracy {train_acc}; ",
+          f"test loss {test_loss}, test accuracy {test_acc}")
+    epoch_actual += 1
+
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        cumu_interval = 0
+        torch.save(model.state_dict(), "best_model.pth")
+    else:
+        cumu_interval += 1
+        print(f"No improvement for {cumu_interval} consecutive epochs.")
+
+    if cumu_interval > max_interval:
+        print(f"Stopping at {epoch_actual} epoch after no improvement for {max_interval} epochs.")
+        break
+
+# Save all history info to a csv file
+df = pd.DataFrame({
+    "Epoch": range(1, epoch_actual+1),
+    "Train Loss": training_losses,
+    "Validation Loss": validation_losses,
+    "Test Loss": test_losses,
+    "Train Accuracy": training_accuracies,
+    "Validation Accuracy": validation_accuracies,
+    "Test Accuracy": test_accuracies
+})
+df.to_csv("Training_stats.csv", index=False)
+
+        
+
