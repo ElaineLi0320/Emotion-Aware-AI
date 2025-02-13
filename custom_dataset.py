@@ -4,9 +4,8 @@
 
 from torch.utils.data import Dataset
 import pandas as pd
-from torch import Tensor
 import numpy as np
-import torch
+from PIL import Image
 
 class CustomDataset(Dataset):
     def __init__(self, csv_file, transform=None):
@@ -23,26 +22,15 @@ class CustomDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, index):
-        image = str_to_tensor(self.df["pixels"][index])
+        pixel_str = self.df.iloc[index, "pixels"]
+        pixel_val = np.fromstring(pixel_str, sep=" ", dtype=np.int8)
+        pixel_arr = pixel_val.reshape(48, 48)
+        
+        # Convert numpy array into a PIL image in grayscale
+        image = Image.fromarray(pixel_arr, mode="L")
         if self.transform:
             image = self.transform(image)
         
-        label = self.df["emotion"][index]
+        label = self.df.iloc[index, "emotion"]
         return image, label
 
-
-def str_to_tensor(pixels:str) -> Tensor:
-    """
-        Convert pixel string into a normalized pytorch tensor
-    """
-    # String to numpy array
-    p = np.fromstring(pixels, sep=" ", dtype=np.float32)
-
-    # Feature normalization
-    p_norm = p / 255.0
-
-    # Reshape array to (C, H, W)
-    p_reshaped = np.reshape(p_norm, (1, 48, 48))
-
-    # Convert to tensor
-    return torch.tensor(p_reshaped, dtype=torch.float32)

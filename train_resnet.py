@@ -4,10 +4,10 @@
 import os
 import tqdm
 import torch
+import pandas as pd
 from custom_dataset import CustomDataset
 from resnet import ResEmoteNet
-
-import pandas as pd
+from torchvision import transforms
 
 # Define globla variables used across this program
 BASE_PATH = "data/"
@@ -19,10 +19,21 @@ device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print("=========== Pre-training Info =============")
 print(f"Using {device} device...")
 
-# ============= OPTIONAL: build a data transformation pipeline ============
+# ============= Build a data transformation pipeline ============
+transform = transforms.Compose([
+    # Faciliate the execution of SE Block
+    transforms.Grayscale(num_output_channels=3),
+    # Introduces variability
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
 
 # Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
-full_ds = CustomDataset(os.path.join(BASE_PATH, "fer2013_filtered.csv"))
+full_ds = CustomDataset(os.path.join(BASE_PATH, "fer2013_filtered.csv"), transform=transform)
 train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
 val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
 
