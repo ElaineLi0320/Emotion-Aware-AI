@@ -18,3 +18,12 @@ Following the standard of well-known dataset FER-2013 created by Pierre Luc Carr
 Facial images representing frustration, distracted and boredom are fetched from Google Images using API calls. To ensure the diversity of our images, a basic search string is combined with other keywords like "men", "women" etc. before being passed to an API call. Faces from returned results are then extracted and cropped to a standard size of 48x48 with OpenCV, followed by a conversion to pixel string before being added to a csv file.
 
 Finally, we manually inspect every pixel string to remove incorectly detected faces and dupliate images. This process is performed in each API call that collects 50 images and again every two API calls when a total of 100 images are fetched. 
+
+### How image labels are assigned
+We intentionally assigned our custom emotions to the exact two that are removed from the original FER2013 datasets -- disgust and fear, closely aligning our dataset to established practices.
+
+### How to run our image collection program
+Since custom images are collected via Google Images API, make sure to load your google API key and custom search engine ID into a .env file in the directory where main.py is located. See Google doc [here](https://developers.google.com/custom-search/v1/overview). Then, simply run `python main.py` and choose the first option on a menu that pops up.
+> [!Note]
+> Make sure to comment out the code in `main.py` that checks for `.env` credentials if you don't intend to run this program for image collection. 
+
