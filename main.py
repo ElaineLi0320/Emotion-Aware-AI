@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 
-from data_collector import DataCollector
+from Data_Collector import DataCollector
 from util import verify_images, concat_csv, display_menu, tally, show_all_files
 
 if __name__ == "__main__":
