@@ -6,7 +6,7 @@
 
 # Ignore the FER2013 file for now
 data/fer2013.csv
-data/fer2013_cropped.csv
+data/fer_neu.csv
 
 # Ignore test scripts
 test.py
