@@ -38,8 +38,8 @@ if __name__ == "__main__":
         verify_images(os.path.join(BASE_PATH, emo, file), False)
     elif mode == 4:
         output_csv = input("\nName of Combined Files: ").strip()
-        emo = output_csv.split("_")[0]
-        concat_csv(os.path.join(BASE_PATH, emo), output_csv)
+        folder = input("Folder to Search: ").strip()
+        concat_csv(os.path.join(BASE_PATH, folder), output_csv)
     elif mode == 5:
         tally(EMOTIONS, BASE_PATH)
     elif mode == 6:

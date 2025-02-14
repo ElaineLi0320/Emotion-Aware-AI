@@ -46,12 +46,12 @@ def concat_csv(file_dir, output_file):
     """
         Check if there are five/two mini-batch files and combine them for double check 
     """
-    # Match file names like "boredom_ggl_1.csv"
     output_path = os.path.join(file_dir, output_file)
     if os.path.exists(output_path):
         raise FileExistsError(f"File {output_path} already exists. Operation aborted.")
 
-    pattern = re.compile(r"\b[a-z]+_([0-9]+)\.csv\b")
+    # Match file names like "boredom_ggl_bt1.csv"
+    pattern = re.compile(r"\b[a-z]+_[a-z]+_([a-z0-9]+)\.csv\b")
     total_rows = 0
 
     df_new = pd.DataFrame(columns=["emotion", "pixels"])

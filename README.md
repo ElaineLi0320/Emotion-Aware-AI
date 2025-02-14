@@ -3,14 +3,14 @@ This research project aims to increase user engagement of learning games with a 
 
 ## Data
 Following the standard of well-known dataset FER-2013 created by Pierre Luc Carrier and Aaron Courville, integer labels are used to classify facial images expressing eight emotions, three of which (in italics) are tailored to the needs of this project:
-- 0: Angry
-- 1: *Frustration*
-- 2: *Boredom*
+- 0: Angry -- 4953
+- 1: *Frustration* -- 265
+- 2: *Boredom* -- 238
 - ~~2: *Distracted*~~
-- 3: Happy
-- 4: Sad
-- 5: Surprise
-- 6: Neutral
+- 3: Happy -- 8989
+- 4: Sad -- 6077
+- 5: Surprise -- 4002
+- 6: Neutral -- 6198
 > [!Note]
 > *Distracted* is temporarily removed from our training dataset due to a failure in collecting meaningful images expressing this particular emotion. It may be added back in future if we're able to gather relevant images from other sources. Class labels are adjusted accordingly.
 
