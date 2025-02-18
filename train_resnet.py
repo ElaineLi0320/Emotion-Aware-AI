@@ -2,7 +2,7 @@
     Prepare data and start model training
 """
 import os
-import tqdm
+from tqdm import tqdm
 import torch
 import pandas as pd
 from torchvision import transforms
@@ -13,7 +13,7 @@ from Custom_Dataset import CustomDataset
 # Define globla variables used across this program
 BASE_PATH = "data/"
 BATCH_SIZE = 16
-EPOCHS = 80
+EPOCHS = 2
 
 # Check for GPU availability
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -34,7 +34,7 @@ transform = transforms.Compose([
 ])
 
 # Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
-full_ds = CustomDataset(os.path.join(BASE_PATH, "fer2013_filtered.csv"), transform=transform)
+full_ds = CustomDataset(os.path.join(BASE_PATH, "fer_neu.csv"), transform=transform)
 train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
 val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
 
@@ -82,7 +82,7 @@ cumu_interval = 0
 
 # Start training
 for epoch in range(EPOCHS):
-    print("=========== Training Info =============")
+    print("\n=========== Training Info =============")
     # Activate training mode
     model.train()
 
@@ -114,7 +114,7 @@ for epoch in range(EPOCHS):
         running_loss += loss.item()
         _, pred = torch.max(output.detach(), 1)
         acc += (pred == labels).sum().item()
-        total += labels.size[0]
+        total += labels.size(0)
 
     # Record loss and accuracy in current epoch
     train_loss = running_loss / len(train_dl)
@@ -138,7 +138,7 @@ for epoch in range(EPOCHS):
             running_loss_val += loss.item()
             _, pred = torch.max(output.detach(), 1)
             acc_val += (pred == labels).sum().item()
-            total_val += labels.size[0]
+            total_val += labels.size(0)
 
     val_loss = running_loss_val / len(val_dl)
     val_acc = acc_val / total_val
@@ -161,21 +161,21 @@ for epoch in range(EPOCHS):
             running_loss_test += loss
             _, pred = torch.max(output.detach(), 1)
             acc_test += (pred == labels).sum().item()
-            total_test += labels.size[0]
+            total_test += labels.size(0)
     
     test_loss = running_loss_test / len(test_dl)
     test_acc = acc_test / total_test
     test_losses.append(test_loss)
     test_accuracies.append(test_acc)
 
-    print(f"Epoch {epoch}: train loss {train_loss}, train accuracy {train_acc}; ",
-          f"test loss {test_loss}, test accuracy {test_acc}")
+    print(f"Epoch {epoch}: train loss {train_loss:.4f}, train accuracy {train_acc:.4f};",
+          f"test loss {test_loss:.4f}, test accuracy {test_acc:.4f}")
     epoch_actual += 1
 
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         cumu_interval = 0
-        torch.save(model.state_dict(), "best_model.pth")
+        torch.save(model.state_dict(), "result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
@@ -187,14 +187,15 @@ for epoch in range(EPOCHS):
 # Save all history info to a csv file
 df = pd.DataFrame({
     "Epoch": range(1, epoch_actual+1),
-    "Train Loss": training_losses,
-    "Validation Loss": validation_losses,
-    "Test Loss": test_losses,
-    "Train Accuracy": training_accuracies,
-    "Validation Accuracy": validation_accuracies,
-    "Test Accuracy": test_accuracies
+    "Train Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in training_losses],
+    "Validation Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in validation_losses],
+    "Test Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in test_losses],
+    "Train Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in training_accuracies],
+    "Validation Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in validation_accuracies],
+    "Test Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in test_accuracies]
 })
-df.to_csv("Training_stats.csv", index=False)
+
+df.to_csv("result/stats.csv", index=False)
 
         
 

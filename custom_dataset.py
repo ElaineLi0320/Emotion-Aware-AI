@@ -22,7 +22,7 @@ class CustomDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, index):
-        pixel_str = self.df.iloc[index, "pixels"]
+        pixel_str = self.df.loc[index, "pixels"]
         pixel_val = np.fromstring(pixel_str, sep=" ", dtype=np.int8)
         pixel_arr = pixel_val.reshape(48, 48)
         
@@ -31,6 +31,6 @@ class CustomDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         
-        label = self.df.iloc[index, "emotion"]
+        label = self.df.loc[index, "emotion"]
         return image, label
 

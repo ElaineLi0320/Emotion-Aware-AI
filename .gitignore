@@ -17,3 +17,6 @@ Pipfile*
 # Interpreter generated files
 __pycache__/
 
+# Large model parameter files
+result/*.pth
+

@@ -47,7 +47,7 @@ class ResidualBlock(nn.Module):
         # Define residual function
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=1)
         self.norm1 = nn.BatchNorm2d(out_ch)
-        self.conv2 = nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=1, padding=1)
         self.norm2 = nn.BatchNorm2d(out_ch)
 
         # Define identity mapping
