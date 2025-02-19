@@ -20,3 +20,8 @@ __pycache__/
 # Large model parameter files
 result/*.pth
 
+# Docker ignore file
+.dockerignore
+
+# vscode generated files
+.vscode/
