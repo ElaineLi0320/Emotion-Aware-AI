@@ -5,6 +5,7 @@ import os
 from tqdm import tqdm
 import torch
 import pandas as pd
+from copy import deepcopy
 from torchvision import transforms
 
 from Resnet import ResEmoteNet
@@ -175,7 +176,8 @@ for epoch in range(EPOCHS):
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         cumu_interval = 0
-        torch.save(model.state_dict(), "result/best_model.pth")
+        # Save a copy of state_dict of best performing  model instead of a reference
+        torch.save(deepcopy(model.state_dict()), "result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
