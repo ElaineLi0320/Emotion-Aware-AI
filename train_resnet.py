@@ -17,7 +17,7 @@ BATCH_SIZE = 16
 EPOCHS = 2
 
 # Check for GPU availability
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("=========== Pre-training Info =============")
 print(f"Using {device} device...")
 
