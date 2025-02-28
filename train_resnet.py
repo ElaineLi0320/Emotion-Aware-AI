@@ -7,6 +7,7 @@ import torch
 import pandas as pd
 from copy import deepcopy
 from torchvision import transforms
+import time
 
 from Resnet import ResEmoteNet
 from Custom_Dataset import CustomDataset
@@ -14,7 +15,7 @@ from Custom_Dataset import CustomDataset
 # Define globla variables used across this program
 BASE_PATH = "data/"
 BATCH_SIZE = 16
-EPOCHS = 2
+EPOCHS = 100
 
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -177,7 +178,7 @@ for epoch in range(EPOCHS):
         best_val_acc = val_acc
         cumu_interval = 0
         # Save a copy of state_dict of best performing  model instead of a reference
-        torch.save(deepcopy(model.state_dict()), "result/best_model.pth")
+        torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
@@ -197,7 +198,8 @@ df = pd.DataFrame({
     "Test Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in test_accuracies]
 })
 
-df.to_csv("result/stats.csv", index=False)
+time_stamp = time.strftime("%Y_%m_%d")
+df.to_csv(f"/result/stats_{time_stamp}.csv", index=False)
 
         
 
