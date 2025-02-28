@@ -198,7 +198,7 @@ df = pd.DataFrame({
     "Test Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in test_accuracies]
 })
 
-time_stamp = time.strftime("%Y_%m_%d")
+time_stamp = time.strftime("%Y%m%d%H%M")
 df.to_csv(f"/result/stats_{time_stamp}.csv", index=False)
 
         
