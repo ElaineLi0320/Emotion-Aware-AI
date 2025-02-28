@@ -101,5 +101,3 @@ def display_menu():
     """
     print("================= Program Menu ===================")
     print("1) Collect images\n2) Audit images\n3) View images\n4) Combine mini-batch files\n5) Tally images\n6) Cross check")
-
-    

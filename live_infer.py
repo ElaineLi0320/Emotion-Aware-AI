@@ -38,6 +38,15 @@ font_color = (0, 255, 0)
 thickness = 3
 line_type = cv2.LINE_AA
 
+def detect_bounding_box(frame, counter):
+    """
+        Detect a bounding box around faces in an image frame
+
+        frame: an image frame
+        counter: an integer controlling when to invoke our ML model
+    """
+    pass
+
 # Access live webcam feed
 video_capture =cv2.VideoCapture(0)
 
