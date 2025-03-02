@@ -16,14 +16,16 @@ from Custom_Dataset import CustomDataset
 BASE_PATH = "data/"
 BATCH_SIZE = 16
 EPOCHS = 100
+FILE_NAME = input("Data File: ").strip()
 
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("=========== Pre-training Info =============")
-print(f"Using {device} device...")
+print(f"Using {device} device...\n")
 
 # ============= Build a data transformation pipeline ============
 transform = transforms.Compose([
+    transforms.Resize((64, 64)),
     # Faciliate the execution of SE Block
     transforms.Grayscale(num_output_channels=3),
     # Introduces variability
@@ -36,7 +38,7 @@ transform = transforms.Compose([
 ])
 
 # Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
-full_ds = CustomDataset(os.path.join(BASE_PATH, "fer_neu.csv"), transform=transform)
+full_ds = CustomDataset(os.path.join(BASE_PATH, FILE_NAME), transform=transform)
 train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
 val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
 
@@ -46,6 +48,7 @@ val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=True
 test_dl = torch.utils.data.DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
 # Check their dimension
+print(f"Training model with data from {FILE_NAME}.")
 print(f"Train Samples: {len(train_ds)}")
 print(f"Validation Samples: {len(val_ds)}")
 print(f"Test Samples: {len(test_ds)}")
