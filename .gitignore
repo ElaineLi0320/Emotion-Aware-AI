@@ -8,8 +8,8 @@
 data/fer2013.csv
 data/fer_neu.csv
 
-# Ignore test scripts
-test.py
+# Ignore temporary scripts
+temp.ipynb
 
 # Ignore pip files
 Pipfile*
@@ -25,3 +25,4 @@ result/*.pth
 
 # vscode generated files
 .vscode/
+
