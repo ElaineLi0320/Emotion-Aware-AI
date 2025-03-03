@@ -25,7 +25,6 @@ print(f"Using {device} device...\n")
 
 # ============= Build a data transformation pipeline ============
 transform = transforms.Compose([
-    transforms.Resize((64, 64)),
     # Faciliate the execution of SE Block
     transforms.Grayscale(num_output_channels=3),
     # Introduces variability
