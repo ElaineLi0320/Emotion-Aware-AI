@@ -4,9 +4,8 @@
 # Exclude system generated files
 .DS_Store
 
-# Ignore the FER2013 file for now
-data/fer2013.csv
-data/fer_neu.csv
+# Ignore all data files due to size limit
+data/*
 
 # Ignore temporary scripts
 temp.ipynb
