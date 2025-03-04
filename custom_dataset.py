@@ -3,9 +3,12 @@
 """
 
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+from torch import sqrt
 import pandas as pd
 import numpy as np
 from PIL import Image
+from torchvision import transforms
 
 class CustomDataset(Dataset):
     def __init__(self, csv_file, transform=None):
@@ -33,4 +36,32 @@ class CustomDataset(Dataset):
         
         label = self.df.loc[index, "emotion"]
         return image, label
+
+def compute_stats(data_file):
+    """
+        Compute mean and std of grayscale pixel values for stable training
+
+        data_file: name of a csv data file
+    """
+    # Scale down image pixel values to [0, 1]
+    transform = transforms.Compose([
+        transforms.ToTensor()
+    ])
+
+    ds = CustomDataset(data_file, transform)
+    dl = DataLoader(ds, batch_size=64, shuffle=False)
+
+    sum_pix = 0
+    sum_pix_squ = 0
+    num_pix = 0
+
+    for image, _ in dl:
+        sum_pix += image.sum()
+        sum_pix_squ += (image ** 2).sum()
+        num_pix += image.numel()
+
+    mean = sum_pix / num_pix
+    std = sqrt((sum_pix_squ / num_pix) - mean ** 2)
+
+    return mean.item(), std.item()
 
