@@ -17,6 +17,7 @@ BASE_PATH = "data/"
 BATCH_SIZE = 16
 EPOCHS = 100
 FILE_NAME = input("Data File: ").strip()
+FULL_PATH = os.path.join(BASE_PATH, FILE_NAME)
 
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -25,6 +26,7 @@ print(f"Using {device} device...\n")
 
 # ============= Build a data transformation pipeline ============
 transform = transforms.Compose([
+    transforms.Resize((64, 64)),
     # Faciliate the execution of SE Block
     transforms.Grayscale(num_output_channels=3),
     # Introduces variability
@@ -37,7 +39,7 @@ transform = transforms.Compose([
 ])
 
 # Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
-full_ds = CustomDataset(os.path.join(BASE_PATH, FILE_NAME), transform=transform)
+full_ds = CustomDataset(FULL_PATH, transform=transform)
 train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
 val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
 
