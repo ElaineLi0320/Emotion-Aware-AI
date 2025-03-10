@@ -5,7 +5,7 @@
 .DS_Store
 
 # Ignore all data files due to size limit
-data/*
+data/*.csv
 
 # Ignore temporary scripts
 temp.ipynb
