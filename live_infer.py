@@ -1,6 +1,6 @@
 import cv2.data
 import torch
-from Resnet import ResEmoteNet
+from models.Resnet import ResEmoteNet
 from pathlib import Path
 from torchvision import transforms
 import cv2

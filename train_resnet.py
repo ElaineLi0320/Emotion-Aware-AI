@@ -9,7 +9,7 @@ from copy import deepcopy
 from torchvision import transforms
 import time
 
-from Resnet import ResEmoteNet
+from models.Resnet import ResEmoteNet
 from Custom_Dataset import CustomDataset
 
 # Define globla variables used across this program
