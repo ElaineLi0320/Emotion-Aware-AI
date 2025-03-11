@@ -26,6 +26,7 @@ We intentionally assigned our custom emotions to the exact two that are removed 
 Since custom images are collected via Google Images API, make sure to load your google API key and custom search engine ID into a .env file in the directory where main.py is located. See Google doc [here](https://developers.google.com/custom-search/v1/overview). Then, simply run `python main.py` in [data](data/main.py) and choose the first option on a menu that pops up.
 > [!Note]
 > Make sure to comment out the code in `main.py` that checks for `.env` credentials if you don't intend to run this program for image collection. 
+
 > [!CAUTION]
-> Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in the script[main.py](data/main.py). 
+> Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in the script [main.py](data/main.py). 
 
