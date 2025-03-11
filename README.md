@@ -28,5 +28,5 @@ Since custom images are collected via Google Images API, make sure to load your 
 > Make sure to comment out the code in `main.py` that checks for `.env` credentials if you don't intend to run this program for image collection. 
 
 > [!CAUTION]
-> Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in the script [main.py](data/main.py). 
+> Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in [main.py](data/main.py). 
 
