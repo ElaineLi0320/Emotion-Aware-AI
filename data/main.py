@@ -34,7 +34,7 @@ if __name__ == "__main__":
         verify_images(os.path.join(BASE_PATH, emo, file))
     elif mode == 3:
         file = input("\nFile to Open: ").strip()
-        # [WARNING] Comment out the following line if no splitting of filename is required 
+        # [WARNING] Adjsut the following lines if no splitting of filename is required 
         emo = file.split("_")[0]
         verify_images(os.path.join(BASE_PATH, emo, file), False)
     elif mode == 4:
