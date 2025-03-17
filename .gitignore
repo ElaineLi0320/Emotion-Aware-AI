@@ -25,3 +25,6 @@ result/*.pth
 # vscode generated files
 .vscode/
 
+# Ignore Weights&Biases files
+wandb/
+
