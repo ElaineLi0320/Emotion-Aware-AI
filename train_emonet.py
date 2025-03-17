@@ -12,6 +12,19 @@ from torch.optim import AdamW
 from ema_pytorch import EMA
 from torchvision import datasets, transforms
 
+import random
+import argparse
+from datetime import datetime
+
+
+seed = 2001
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+random.seed(seed)
+np.random.seed(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 class Trainer:
     def __init__(self, model, train_dl, validation_dl, test_dl, classes, 
                  output_dir, max_epochs: int=10000, early_stop: int=12,
@@ -79,7 +92,7 @@ class Trainer:
 
     def run(self):
         """
-            Start model training
+            Start the training process
         """
         # Counter for epochs with no validation loss improvement
         counter = 0
@@ -123,6 +136,9 @@ class Trainer:
         wandb.finish()
 
     def train_epoch(self):
+        """
+            Train the model on batches of data
+        """
         self.model.train()
 
         avg_accuracy = []
@@ -172,6 +188,105 @@ class Trainer:
         pbar.close()
         return np.mean(avg_loss), np.mean(avg_accuracy)
 
+    def val_epoch(self):
+        """
+            Validate the model on the validation set
+        """
+        self.model.eval()
+
+        avg_loss = []
+        predicted_lables = []
+        true_labels = []
+
+        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.validation_dataloader))
+
+        for batch_idx, data in enumerate(self.validation_dataloader):
+            inputs, labels = data
+            inputs = inputs.to(self.device)
+            labels = labels.to(self.device)
+
+            with torch.autocast(self.device.type, enabled=self.amp):
+                predictions, _, loss = self.model(inputs, labels)
+
+            avg_loss.append(loss.item())
+            predicted_lables.extend(predictions.tolist())
+            true_labels.extend(labels.tolist())
+
+            pbar.update()
+        
+        pbar.close()
+
+        # Compute accuracy of the entire validation set
+        accuracy = (
+            torch.eq(torch.tensor(predicted_labels), torch.tensor(true_labels)).float().mean().item()
+        )
+        
+        wandb.log(
+            {
+                "Confusion Matrix": wandb.plot.confusion_matrix(
+                    probs=None,
+                    y_true=true_labels,
+                    preds=predicted_labels,
+                    class_names=self.classes
+                )
+            }
+        )
+
+        print(
+            f"Validation Loss: {np.mean(avg_loss) * 1.0:.4f}, "
+            f"Validation Accuracy: {accuracy * 100.0:.4f}%"
+        )
+
+        return np.mean(avg_loss), accuracy * 100.0
+
+    def test_model(self):
+        """
+            Test the model on the test set
+        """
+        self.model.eval()
+
+        predicted_labels = []
+        true_labels = []
+
+        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.test_dataloader))
+        for batch_idx, (inputs, labels) in enumerate(self.test_dataloader):
+            bs, ncrops, c, h, w = inputs.shape
+            inputs = inputs.view(-1, c, h, w).to(self.device)
+            labels = labels.to(self.device)
+
+            # Enable automatic precision adjustment
+            with torch.autocast(self.device.type, enabled=self.amp):
+                # Use EMA-smoothed model for testing
+                _, logits = self.ema(inputs)
+            outputs_avg = logits.view(bs, ncrops, -1).mean(dim=1)
+            predictions = torch.argmax(outputs_avg, dim=1)
+
+            predicted_labels.extend(predictions.tolist())
+            true_labels.extend(labels.tolist())
+
+            pbar.update()
+        
+        pbar.close()
+
+        # Compute accuracy of the entire test set
+        accuracy = (
+            torch.eq(torch.tensor(predicted_labels), torch.tensor(true_labels)).float().mean().item()
+        )
+
+        print(f"Test Accuracy: {accuracy * 100.0:.4f}%")
+
+        wandb.log(
+            {
+                "Confusion Matrix": wandb.plot.confusion_matrix(
+                    probs=None,
+                    y_true=true_labels,
+                    preds=predicted_labels,
+                    class_names=self.classes
+                )
+            }
+        )
+
+        
     def visualize_stn(self):
         """
             Visually compare original images and transformed images after STN
@@ -196,3 +311,183 @@ class Trainer:
 
         # Log images on Weights&Biases
         wandb.log({"Batch": wandb.Image(grid), "Transformed Images": wandb.Image(stn_batch)})
+
+    def save(self):
+        """
+            Save the model checkpoint
+        """
+        data = {
+            "model": self.model.state_dict(),
+            "opt": self.optimizer.state_dict(),
+            "ema": self.ema.state_dict(),
+            "scaler": self.scaler.state_dict(),
+            "scheduler": self.scheduler.state_dict(),
+            "best_acc": self.best_val_accuracy,
+        }
+
+        torch.save(data, str(self.output_dir / f"{self.execution_name}.pt"))
+
+    def load(self, path):
+        """
+            Load the model checkpoint
+
+            path: path to the model checkpoint
+        """
+        # Load model checkpoint to the device
+        data = torch.load(path, map_location=self.device)
+
+        self.model.load_state_dict(data["model"])
+        self.optimizer.load_state_dict(data["opt"])
+        self.ema.load_state_dict(data["ema"])
+        self.scaler.load_state_dict(data["scaler"])
+        self.scheduler.load_state_dict(data["scheduler"])
+        self.best_val_accuracy = data["best_acc"]
+
+def plot_images():
+    # Create a grid of images for visualization from the training dataset
+    num_rows = 4
+    num_cols = 8
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(10, 5))
+
+    # Plot the images
+    for i in range(num_rows):
+        for j in range(num_cols):
+            index = i * num_cols + j
+            image, _ = train_dataset[index]
+            # Convert tensor to PIL image format
+            axes[i, j].imshow(image.permute(1, 2, 0))
+            axes[i, j].axis("off")
+
+    plt.tight_layout()
+    plt.savefig(f"images.png")
+    plt.close()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train EmoNeXt model")
+
+    parser.add_argument("--data_path", type=str, help="Path to the training dataset")
+    parser.add_argument("--output_dir", type=str, 
+                        help="Path to save the model checkpoint", default="out")
+
+    parser.add_argument("--epochs", type=int, help="Maximum number of epochs")
+    parser.add_argument("--batch_size", type=int, help="Batch size for training", default=32)
+
+    parser.add_argument("--lr", type=float, help="Learning rate", default=1e-4)
+    parser.add_argument(
+        "--amp",
+        action="store_true", # Set to true if this argument is provided
+        default=False,
+        help="Enable mixed precision training",
+    )
+
+    # Whether to use 22k pre-trained weights
+    parser.add_argument("--in_22k", action="store_true", default=False)
+    parser.add_argument(
+        "--gradient-accumulation-steps",
+        type=int,
+        default=1,
+        help="Number of steps to accumulate gradients before updating the model weights",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=0,
+        help="The number of subprocesses to use for data loading."
+        "0 means that the data will be loaded in the main process.",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default=None,
+        help="Path to the checkpoint file for resuming training or performing inference",
+    )
+    parser.add_argument(
+        "--model-size",
+        choices=["tiny", "small", "base", "large", "xlarge"],
+        default="tiny",
+        help="Choose the size of the model: tiny, small, base, large, or xlarge",
+    )
+
+    opt = parser.parse_args()
+    print(opt)
+
+    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    exec_name = f"EmoNeXt_{opt.model_size}_{current_time}"
+
+    wandb.init(project="EmoNeXt", name=exec_name, anonymous="must")
+
+    # Define transformations for training, validation, and testing
+    train_transform = transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.Grayscale(),
+            transforms.Resize(236),
+            transforms.RandomRotation(degrees=20),
+            transforms.RandomCrop(224),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+        ]
+    )
+
+    val_transform = transforms.Compose(
+        [
+            transforms.Grayscale(),
+            transforms.Resize(236),
+            transforms.RandomCrop(224),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+        ]
+    )
+
+    test_transform = transforms.Compose(
+        [
+            transforms.Grayscale(),
+            transforms.Resize(236),
+            transforms.TenCrop(224),
+            transforms.Lambda(
+                lambda crops: torch.stack(
+                    [transforms.ToTensor()(crop) for crop in crops]
+                )
+            ),
+            transforms.Lambda(
+                lambda crops: torch.stack([crop.repeat(3, 1, 1) for crop in crops])
+            ),
+        ]
+    )
+
+    train_dataset = datasets.ImageFolder(opt.data_path + "/train", train_transform)
+    val_dataset = datasets.ImageFolder(opt.data_path + "/val", val_transform)
+    test_dataset = datasets.ImageFolder(opt.data_path + "/test", test_transform)
+
+    print("Using %d images for training." % len(train_dataset))
+    print("Using %d images for evaluation." % len(val_dataset))
+    print("Using %d images for testing." % len(test_dataset))
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=opt.batch_size,
+        shuffle=True,
+        num_workers=opt.num_workers,
+    )
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+    net = get_model(len(train_dataset.classes), opt.model_size, in_22k=opt.in_22k)
+
+    trainer = Trainer(
+        model=net,
+        train_dl=train_loader,
+        validation_dl=val_loader,
+        test_dl=test_loader,
+        classes=train_dataset.classes,
+        execution_name=exec_name,
+        lr=opt.lr,
+        output_dir=opt.output_dir,
+        max_epochs=opt.epochs,
+        amp=opt.amp,
+        checkpoint_path=opt.checkpoint,
+    )
+
+    trainer.run()
+    
