@@ -28,3 +28,5 @@ result/*.pth
 # Ignore Weights&Biases files
 wandb/
 
+# Ignore FER2013 data files
+FER2013/
