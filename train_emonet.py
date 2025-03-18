@@ -3,7 +3,7 @@
 """
 import torch
 import wandb 
-import tqdm
+from tqdm import tqdm
 import sys
 import numpy as np
 from pathlib import Path
@@ -11,10 +11,13 @@ from scheduler import CosineAnnealingWithWarmRestartsLR
 from torch.optim import AdamW
 from ema_pytorch import EMA
 from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 
+import torchvision
 import random
 import argparse
 from datetime import datetime
+from models.Emonext import get_model
 
 
 seed = 2001
@@ -144,7 +147,7 @@ class Trainer:
         avg_accuracy = []
         avg_loss = []
 
-        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.training_dataloader))
+        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.train_dl))
         # Training on a batch of data
         for batch_idx, data in enumerate(self.train_dl):
             inputs, labels = data
@@ -198,9 +201,9 @@ class Trainer:
         predicted_lables = []
         true_labels = []
 
-        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.validation_dataloader))
+        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.validation_dl))
 
-        for batch_idx, data in enumerate(self.validation_dataloader):
+        for batch_idx, data in enumerate(self.validation_dl):
             inputs, labels = data
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
@@ -248,8 +251,8 @@ class Trainer:
         predicted_labels = []
         true_labels = []
 
-        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.test_dataloader))
-        for batch_idx, (inputs, labels) in enumerate(self.test_dataloader):
+        pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.test_dl))
+        for batch_idx, (inputs, labels) in enumerate(self.test_dl):
             bs, ncrops, c, h, w = inputs.shape
             inputs = inputs.view(-1, c, h, w).to(self.device)
             labels = labels.to(self.device)
@@ -362,10 +365,28 @@ def plot_images():
     plt.savefig(f"images.png")
     plt.close()
 
+# Custom transform to repeat the grayscale image channels to 3
+class RepeatChannels:
+    def __call__(self, x):
+        return x.repeat(3, 1, 1)
+
+# Custom transform to stack the tensor crops
+class StackTensorCrops:
+    def __init__(self):
+        self.to_tensor = transforms.ToTensor()
+    
+    def __call__(self, crops):
+        return torch.stack([self.to_tensor(crop) for crop in crops])
+
+# Custom transform to repeat the channels of the tensor crops
+class RepeatChannelsCrops:
+    def __call__(self, crops):
+        return torch.stack([crop.repeat(3, 1, 1) for crop in crops])
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train EmoNeXt model")
 
-    parser.add_argument("--data_path", type=str, help="Path to the training dataset")
+    parser.add_argument("--dataset_path", type=str, help="Path to the training dataset")
     parser.add_argument("--output_dir", type=str, 
                         help="Path to save the model checkpoint", default="out")
 
@@ -383,13 +404,13 @@ if __name__ == "__main__":
     # Whether to use 22k pre-trained weights
     parser.add_argument("--in_22k", action="store_true", default=False)
     parser.add_argument(
-        "--gradient-accumulation-steps",
+        "--gradient_accumulation_steps",
         type=int,
         default=1,
         help="Number of steps to accumulate gradients before updating the model weights",
     )
     parser.add_argument(
-        "--num-workers",
+        "--num_workers",
         type=int,
         default=0,
         help="The number of subprocesses to use for data loading."
@@ -402,7 +423,7 @@ if __name__ == "__main__":
         help="Path to the checkpoint file for resuming training or performing inference",
     )
     parser.add_argument(
-        "--model-size",
+        "--model_size",
         choices=["tiny", "small", "base", "large", "xlarge"],
         default="tiny",
         help="Choose the size of the model: tiny, small, base, large, or xlarge",
@@ -426,7 +447,7 @@ if __name__ == "__main__":
             transforms.RandomRotation(degrees=20),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            RepeatChannels(),
         ]
     )
 
@@ -436,7 +457,7 @@ if __name__ == "__main__":
             transforms.Resize(236),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            RepeatChannels(),
         ]
     )
 
@@ -445,20 +466,14 @@ if __name__ == "__main__":
             transforms.Grayscale(),
             transforms.Resize(236),
             transforms.TenCrop(224),
-            transforms.Lambda(
-                lambda crops: torch.stack(
-                    [transforms.ToTensor()(crop) for crop in crops]
-                )
-            ),
-            transforms.Lambda(
-                lambda crops: torch.stack([crop.repeat(3, 1, 1) for crop in crops])
-            ),
+            StackTensorCrops(),
+            RepeatChannelsCrops(),
         ]
     )
 
-    train_dataset = datasets.ImageFolder(opt.data_path + "/train", train_transform)
-    val_dataset = datasets.ImageFolder(opt.data_path + "/val", val_transform)
-    test_dataset = datasets.ImageFolder(opt.data_path + "/test", test_transform)
+    train_dataset = datasets.ImageFolder(opt.dataset_path + "/train", train_transform)
+    val_dataset = datasets.ImageFolder(opt.dataset_path + "/val", val_transform)
+    test_dataset = datasets.ImageFolder(opt.dataset_path + "/test", test_transform)
 
     print("Using %d images for training." % len(train_dataset))
     print("Using %d images for evaluation." % len(val_dataset))
@@ -490,4 +505,4 @@ if __name__ == "__main__":
     )
 
     trainer.run()
-    
+

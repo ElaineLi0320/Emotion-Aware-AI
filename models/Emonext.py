@@ -2,7 +2,7 @@
     Implementation of EmoNeXt for FER introduced in a 2025 paper.
 """
 import torch
-import math.sqrt as sqrt
+import math
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
@@ -80,7 +80,7 @@ class Attention(nn.Module):
         value = self.value(x)
 
         # Mathmatical stablizer 
-        scale = 1 / sqrt(self.input_dim)
+        scale = 1 / math.sqrt(self.input_dim)
         # Compute pairwise attention weight
         scores = torch.matmul(query, key.transpose(-2, -1)) * scale
         # Apply softmax along the column and multiply with value matrix
@@ -101,9 +101,9 @@ class LayerNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-6, data_format="channel_last"):
         super().__init__()
         # Learnable paramaters for normalization
-        self.weight = nn.parameter(torch.randn(normalized_shape))
-        self.bias = nn.parameter(torch.randn(normalized_shape))
-        self.normalized_shape = normalized_shape
+        self.weight = nn.Parameter(torch.ones(normalized_shape))
+        self.bias = nn.Parameter(torch.zeros(normalized_shape))
+        self.normalized_shape = (normalized_shape, )
         # Small value for numerical stability
         self.eps = eps
         if data_format not in ["channel_first", "channel_last"]:
@@ -296,7 +296,7 @@ class EmoNeXt(nn.Module):
         x = self.stn(x)
         x = self.forward_features(x)
         _, weights = self.attention(x)
-        logits = self.head()
+        logits = self.head(x)
 
         if labels is not None:
             mean_attn_weight = torch.mean(weights)
