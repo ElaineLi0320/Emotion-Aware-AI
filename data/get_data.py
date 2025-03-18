@@ -71,12 +71,12 @@ def prepare_dataset(csv_path, emotion_labels, output_folder_path):
             img.save(output_file_path)
 
 def main():
-    print("Welcome to Dataset Preparation Tool!")
+    print("============ CSV to Images Tool =============")
     csv_path, emotion_labels, output_folder_path = get_user_input()
     
     print("\nPreparing dataset...")
     prepare_dataset(csv_path, emotion_labels, output_folder_path)
-    print("Dataset prepared and organized into train, val, and test folders.")
+    print(f"Dataset prepared and organized into train, val, and test folders in {output_folder_path}")
 
 if __name__ == "__main__":
     main()
