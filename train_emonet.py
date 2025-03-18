@@ -13,12 +13,16 @@ from ema_pytorch import EMA
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
+from dotenv import load_dotenv
 import torchvision
 import random
 import argparse
 from datetime import datetime
 from models.Emonext import get_model
 
+load_dotenv()
+wandb_api_key = os.getenv("WANDB_API_KEY")
+wandb_entity = os.getenv("WANDB_ENTITY")
 
 seed = 2001
 torch.manual_seed(seed)
@@ -429,13 +433,36 @@ if __name__ == "__main__":
         help="Choose the size of the model: tiny, small, base, large, or xlarge",
     )
 
+    parser.add_argument("wandb", action="store_true", help="Enable Weights and Biases logging with default user")
+    parser.add_argument('--wandb_anonymous', action='store_true', help='Use wandb in anonymous mode')
+
     opt = parser.parse_args()
     print(opt)
 
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     exec_name = f"EmoNeXt_{opt.model_size}_{current_time}"
 
-    wandb.init(project="EmoNeXt", name=exec_name, anonymous="must")
+    if opt.wandb:
+        if opt.wandb_anonymous:
+            wandb.init(project="EmoNeXt", name=exec_name, anonymous="must")
+        else:
+            wandb.init(project="EmoNeXt", 
+                       name=exec_name, 
+                       anonymous="allow",   # Allow anonymous users to view the results
+                       entity=wandb_entity,
+                       api_key=wandb_api_key,
+                       config={
+                            "dataset_path": opt.dataset_path,
+                            "epochs": opt.epochs,
+                            "batch_size": opt.batch_size,
+                            "learning_rate": opt.lr,
+                            "in_22k": opt.in_22k,
+                            "model_size": opt.model_size,
+                        }
+            )
+    else:
+        print("Weights and Biases logging is disabled")
+        os.environ["WANDB_MODE"] = "disabled"
 
     # Define transformations for training, validation, and testing
     train_transform = transforms.Compose(
