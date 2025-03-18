@@ -29,4 +29,5 @@ result/*.pth
 wandb/
 
 # Ignore FER2013 data files
-FER2013/
+data/FER*/
+
