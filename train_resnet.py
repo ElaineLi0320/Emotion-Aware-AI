@@ -6,21 +6,20 @@ from tqdm import tqdm
 import torch
 import pandas as pd
 from copy import deepcopy
-from torchvision import transforms
+from torchvision import transforms, datasets
 import time
 
 from models.Resnet import ResEmoteNet
-from Custom_Dataset import CustomDataset
 
 # Define globla variables used across this program
 BASE_PATH = "data/"
 BATCH_SIZE = 16
 EPOCHS = 100
-FILE_NAME = input("Data File: ").strip()
-FULL_PATH = os.path.join(BASE_PATH, FILE_NAME)
+DS_PATH = input("Dataset Path: ").strip()
+FULL_PATH = os.path.join(BASE_PATH, DS_PATH)
 
 # Check for GPU availability
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "mps")
 print("=========== Pre-training Info =============")
 print(f"Using {device} device...\n")
 
@@ -38,10 +37,10 @@ transform = transforms.Compose([
     )
 ])
 
-# Train, validation and test split with a ratio of [0.7, 0.15, 0.15]
-full_ds = CustomDataset(FULL_PATH, transform=transform)
-train_ds, sub_ds = torch.utils.data.random_split(full_ds, [0.7, 0.3])
-val_ds, test_ds = torch.utils.data.random_split(sub_ds, [0.5, 0.5])
+# Load datasets using ImageFolder
+train_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "train"), transform)
+val_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "val"), transform)
+test_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "test"), transform)
 
 # Create a dataloader for training, validation and test set
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
@@ -49,7 +48,7 @@ val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=True
 test_dl = torch.utils.data.DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
 # Check their dimension
-print(f"Training model with data from {FILE_NAME}.")
+print(f"Training model with data from {FULL_PATH}.")
 print(f"Train Samples: {len(train_ds)}")
 print(f"Validation Samples: {len(val_ds)}")
 print(f"Test Samples: {len(test_ds)}")
@@ -182,7 +181,7 @@ for epoch in range(EPOCHS):
         best_val_acc = val_acc
         cumu_interval = 0
         # Save a copy of state_dict of best performing  model instead of a reference
-        torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
+        torch.save(deepcopy(model.state_dict()), "result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
@@ -203,7 +202,7 @@ df = pd.DataFrame({
 })
 
 time_stamp = time.strftime("%Y%m%d%H%M")
-df.to_csv(f"/result/stats_{time_stamp}.csv", index=False)
+df.to_csv(f"result/stats_{time_stamp}.csv", index=False)
 
         
 
