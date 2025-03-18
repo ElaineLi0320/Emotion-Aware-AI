@@ -390,7 +390,7 @@ class RepeatChannelsCrops:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train EmoNeXt model")
 
-    parser.add_argument("--dataset_path", type=str, help="Path to the training dataset")
+    parser.add_argument("--dataset_path", type=str, help="Path to the entire dataset")
     parser.add_argument("--output_dir", type=str, 
                         help="Path to save the model checkpoint", default="out")
 
