@@ -13,8 +13,8 @@ device = "cuda" if torch.cuda.is_available() else "mps"
 
 # Set up our model
 model_path = Path("result/best_model.pth")
-model = ResEmoteNet.to(device)
-model.load_state_dict(torch.load(model_path, weights_only=True))
+model = ResEmoteNet().to(device)
+model.load_state_dict(torch.load(model_path, weights_only=True, map_location=device))
 model.eval()
 
 # ============= Build a data transformation pipeline ============
