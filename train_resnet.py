@@ -181,7 +181,7 @@ for epoch in range(EPOCHS):
         best_val_acc = val_acc
         cumu_interval = 0
         # Save a copy of state_dict of best performing  model instead of a reference
-        torch.save(deepcopy(model.state_dict()), "result/best_model.pth")
+        torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
@@ -202,7 +202,7 @@ df = pd.DataFrame({
 })
 
 time_stamp = time.strftime("%Y%m%d%H%M")
-df.to_csv(f"result/stats_{time_stamp}.csv", index=False)
+df.to_csv(f"/result/stats_{time_stamp}.csv", index=False)
 
         
 
