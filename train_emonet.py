@@ -1,8 +1,8 @@
 """
     Training program for EmoNeXt model 
 """
+import os
 import torch
-import wandb 
 from tqdm import tqdm
 import sys
 import numpy as np
@@ -19,6 +19,7 @@ import random
 import argparse
 from datetime import datetime
 from models.Emonext import get_model
+import wandb 
 
 load_dotenv()
 wandb_api_key = os.getenv("WANDB_API_KEY")
@@ -392,7 +393,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--dataset_path", type=str, help="Path to the entire dataset")
     parser.add_argument("--output_dir", type=str, 
-                        help="Path to save the model checkpoint", default="out")
+                        help="Path to save the model checkpoint", default="/result")
 
     parser.add_argument("--epochs", type=int, help="Maximum number of epochs")
     parser.add_argument("--batch_size", type=int, help="Batch size for training", default=32)
@@ -450,7 +451,6 @@ if __name__ == "__main__":
                        name=exec_name, 
                        anonymous="allow",   # Allow anonymous users to view the results
                        entity=wandb_entity,
-                       api_key=wandb_api_key,
                        config={
                             "dataset_path": opt.dataset_path,
                             "epochs": opt.epochs,
