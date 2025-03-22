@@ -34,6 +34,7 @@ class CosineAnnealingWithWarmRestartsLR(LRScheduler):
         if current_cycle_steps < self.warmup_steps:
             current_lr = self.min_lr + (self.max_lr - self.min_lr) * current_cycle_steps / self.warmup_steps
         # Cosine decay phase
+        else:
             current_lr = self.min_lr + (self.max_lr - self.min_lr) / 2 * (
                 1 + math.cos(
                     math.pi * (current_cycle_steps - self.warmup_steps)
