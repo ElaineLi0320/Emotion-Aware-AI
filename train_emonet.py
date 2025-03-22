@@ -498,9 +498,9 @@ if __name__ == "__main__":
         ]
     )
 
-    train_dataset = datasets.ImageFolder(opt.dataset_path + "/train", train_transform)
-    val_dataset = datasets.ImageFolder(opt.dataset_path + "/val", val_transform)
-    test_dataset = datasets.ImageFolder(opt.dataset_path + "/test", test_transform)
+    train_dataset = datasets.ImageFolder("data/" + opt.dataset_path + "/train", train_transform)
+    val_dataset = datasets.ImageFolder("data/" + opt.dataset_path + "/val", val_transform)
+    test_dataset = datasets.ImageFolder("data/" + opt.dataset_path + "/test", test_transform)
 
     print("Using %d images for training." % len(train_dataset))
     print("Using %d images for evaluation." % len(val_dataset))
