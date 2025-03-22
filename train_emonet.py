@@ -203,7 +203,7 @@ class Trainer:
         self.model.eval()
 
         avg_loss = []
-        predicted_lables = []
+        predicted_labels = []
         true_labels = []
 
         pbar = tqdm(unit="batch", file=sys.stdout, total=len(self.validation_dl))
@@ -217,7 +217,7 @@ class Trainer:
                 predictions, _, loss = self.model(inputs, labels)
 
             avg_loss.append(loss.item())
-            predicted_lables.extend(predictions.tolist())
+            predicted_labels.extend(predictions.tolist())
             true_labels.extend(labels.tolist())
 
             pbar.update()
