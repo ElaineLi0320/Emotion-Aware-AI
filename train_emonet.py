@@ -398,7 +398,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, help="Maximum number of epochs")
     parser.add_argument("--batch_size", type=int, help="Batch size for training", default=32)
 
-    parser.add_argument("--lr", type=float, help="Learning rate", default=1e-4)
+    parser.add_argument("--lr", type=float, help="Learning rate", default=1e-3)
     parser.add_argument(
         "--amp",
         action="store_true", # Set to true if this argument is provided
@@ -482,7 +482,7 @@ if __name__ == "__main__":
         [
             transforms.Grayscale(),
             transforms.Resize(236),
-            transforms.RandomCrop(224),
+            # transforms.RandomCrop(224),
             transforms.ToTensor(),
             RepeatChannels(),
         ]
@@ -516,6 +516,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     net = get_model(len(train_dataset.classes), opt.model_size, in_22k=opt.in_22k)
+    print(f"Model Total Params: {sum(p.numel() for p in net.parameters()):,}")
 
     trainer = Trainer(
         model=net,
