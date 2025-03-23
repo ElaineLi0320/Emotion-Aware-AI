@@ -313,9 +313,9 @@ class Trainer:
         to_pil = transforms.ToPILImage()
         
         # Original images 
-        grid = to_pil(torchvision.utils.make_grid(batch, nrow=16, padding=4))
+        grid = to_pil(torchvision.utils.make_grid(batch, nrow=8, padding=4))
         # Transformed images
-        stn_batch = to_pil(torchvision.utils.make_grid(stn_batch, nrow=16, padding=4))
+        stn_batch = to_pil(torchvision.utils.make_grid(stn_batch, nrow=8, padding=4))
 
         # Log images on Weights&Biases
         wandb.log({"Batch": wandb.Image(grid), "Transformed Images": wandb.Image(stn_batch)})
@@ -482,7 +482,7 @@ if __name__ == "__main__":
         [
             transforms.Grayscale(),
             transforms.Resize(236),
-            # transforms.RandomCrop(224),
+            transforms.RandomCrop(224),
             transforms.ToTensor(),
             RepeatChannels(),
         ]
