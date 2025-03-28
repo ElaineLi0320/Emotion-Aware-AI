@@ -8,14 +8,39 @@ import pandas as pd
 from copy import deepcopy
 from torchvision import transforms, datasets
 import time
-
+from dotenv import load_dotenv
 from models.Resnet import ResEmoteNet
+import wandb
 
-# Define globla variables used across this program
+# Load environment variables
+load_dotenv()
+wandb_api_key = os.getenv("WANDB_API_KEY")
+wandb_entity = os.getenv("WANDB_ENTITY")
+
+# Define globla variables and hyperparameters
 BASE_PATH = "data/"
-BATCH_SIZE = 16
-EPOCHS = 100
+BATCH_SIZE = int(input("Batch Size[default 16]: ").strip() or 16)
+EPOCHS = int(input("Epochs[default 100]: ").strip() or 100)
 DS_PATH = input("Dataset Path: ").strip()
+LR = float(input("Optimizer Learning Rate[default 0.001]: ").strip() or 0.001)
+MOMENTUM = float(input("Optimizer Momentum[default 0.9]: ").strip() or 0.9)
+WEIGHT_DECAY = float(input("Optimizer Weight Decay[default 1e-4]: ").strip() or 1e-4)
+
+# Initialize Weights&Biases logging
+current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+exec_name = f"ResEmoteNet_{current_time}"
+wandb.init(project="ResEmoteNet", entity=wandb_entity, 
+           name=exec_name, anonymous="allow",
+           config={
+                    "batch_size": BATCH_SIZE, 
+                    "epochs": EPOCHS, 
+                    "dataset_path": DS_PATH,
+                    "optimizer_lr": LR,
+                    "optimizer_momentum": MOMENTUM,
+                    "optimizer_weight_decay": WEIGHT_DECAY
+                  }
+           )
+
 FULL_PATH = os.path.join(BASE_PATH, DS_PATH)
 
 # Check for GPU availability
@@ -62,7 +87,8 @@ print(f"Model Total Params: {total_params:,}")
 
 # Configure loss function and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=1e-4)
+optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
+wandb.watch(model, loss_fn, optimizer, log="all")
 
 # ====================================== START TRAINING ==================================
 # Keep track of loss and accuracy in different modes
@@ -173,6 +199,17 @@ for epoch in range(EPOCHS):
     test_losses.append(test_loss)
     test_accuracies.append(test_acc)
 
+    # Log training and validation metrics to Weights&Biases
+    wandb.log({
+        "epoch": epoch + 1,
+        "train_loss": train_loss,
+        "train_acc": train_acc,
+        "val_loss": val_loss,
+        "val_acc": val_acc, 
+        "test_loss": test_loss,
+        "test_acc": test_acc
+    })
+
     print(f"Epoch {epoch}: train loss {train_loss:.4f}, train accuracy {train_acc:.4f};",
           f"test loss {test_loss:.4f}, test accuracy {test_acc:.4f}")
     epoch_actual += 1
@@ -182,6 +219,7 @@ for epoch in range(EPOCHS):
         cumu_interval = 0
         # Save a copy of state_dict of best performing  model instead of a reference
         torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
+        wandb.save("/result/best_model.pth")
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
@@ -190,19 +228,7 @@ for epoch in range(EPOCHS):
         print(f"Stopping at {epoch_actual} epoch after no improvement for {max_interval} epochs.")
         break
 
-# Save all history info to a csv file
-df = pd.DataFrame({
-    "Epoch": range(1, epoch_actual+1),
-    "Train Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in training_losses],
-    "Validation Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in validation_losses],
-    "Test Loss": [t.cpu().item() if torch.is_tensor(t) else t for t in test_losses],
-    "Train Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in training_accuracies],
-    "Validation Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in validation_accuracies],
-    "Test Accuracy": [t.cpu().item() if torch.is_tensor(t) else t for t in test_accuracies]
-})
-
-time_stamp = time.strftime("%Y%m%d%H%M")
-df.to_csv(f"/result/stats_{time_stamp}.csv", index=False)
+wandb.finish()
 
         
 
