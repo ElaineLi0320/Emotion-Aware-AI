@@ -4,13 +4,13 @@
 import os
 from tqdm import tqdm
 import torch
-import pandas as pd
 from copy import deepcopy
 from torchvision import transforms, datasets
 import time
 from dotenv import load_dotenv
 from models.Resnet import ResEmoteNet
 import wandb
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -88,7 +88,7 @@ print(f"Model Total Params: {total_params:,}")
 # Configure loss function and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-wandb.watch(model, loss_fn, optimizer, log="all")
+wandb.watch(model, log="all")
 
 # ====================================== START TRAINING ==================================
 # Keep track of loss and accuracy in different modes
@@ -129,7 +129,7 @@ for epoch in range(EPOCHS):
         # Reset gradients to zero
         optimizer.zero_grad()
 
-        # Generate perdictions
+        # Generate predictions
         output = model(inputs)
 
         # Compute loss
