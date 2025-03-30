@@ -219,7 +219,9 @@ for epoch in range(EPOCHS):
         cumu_interval = 0
         # Save a copy of state_dict of best performing  model instead of a reference
         torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
-        wandb.save("/result/best_model.pth")
+        artifact = wandb.Artifact(name=f"model-{exec_name}", type="model")
+        artifact.add_file("/result/best_model.pth")
+        wandb.log_artifact(artifact)
     else:
         cumu_interval += 1
         print(f"No improvement for {cumu_interval} consecutive epochs.")
