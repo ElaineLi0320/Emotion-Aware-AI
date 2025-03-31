@@ -73,6 +73,31 @@ class ResEmoteNet(nn.Module):
     def __init__(self):
         super().__init__()
 
+        # Spatial localization network: input shape (3, 48, 48)
+        self.localization = nn.Sequential(
+            # (3, 48, 48) -> (32, 42, 42)
+            nn.Conv2d(3, 16, kernel_size=7),
+            # (32, 42, 42) -> (32, 21, 21)
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(inplace=True),
+            # (32, 21, 21) -> (64, 15, 15)  
+            nn.Conv2d(16, 32, kernel_size=7),
+            # (64, 15, 15) -> (64, 7, 7)
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(inplace=True)
+        )
+
+        # Affine transformation layer
+        self.fc_loc = nn.Sequential(
+            nn.Linear(32 * 7 * 7, 32),
+            nn.ReLU(inplace=True),
+            nn.Linear(32, 3 * 2)
+        )
+
+        # Initialize the weights and biases of the affine transformation layer
+        self.fc_loc[2].weight.data.zero_()
+        self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
+
         # First conv layer followed by batch norm layer 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
@@ -111,7 +136,25 @@ class ResEmoteNet(nn.Module):
         # Convert to class probability distribution
         self.fc4 = nn.Linear(256, 7)
 
+    def stn(self, x):
+        """
+            Spatial transformation network
+        """
+        xs = self.localization(x)
+        xs = xs.view(-1, 32 * 7 * 7)
+        theta = self.fc_loc(xs)
+        theta = theta.view(-1, 2, 3)
+
+        # Create a grid generator with learnted affine transformation
+        grid = F.affine_grid(theta, x.size())
+        # Apply the affine transformation to the input image
+        x = F.grid_sample(x, grid)
+        return x
+
     def forward(self, x):
+        # Apply STN to the input image
+        x = self.stn(x)
+
         # First conv block
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.max_pool2d(x, 2)
