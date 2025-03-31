@@ -72,6 +72,7 @@ class ResEmoteNet(nn.Module):
     """
     def __init__(self):
         super().__init__()
+
         # First conv layer followed by batch norm layer 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
