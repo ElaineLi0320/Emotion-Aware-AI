@@ -49,7 +49,7 @@ print("=========== Pre-training Info =============")
 print(f"Using {device} device...\n")
 
 # ============= Build a data transformation pipeline ============
-transform = transforms.Compose([
+train_transform = transforms.Compose([
     # transforms.Resize((64, 64)),
     # Faciliate the execution of SE Block
     transforms.Grayscale(num_output_channels=3),
@@ -64,10 +64,20 @@ transform = transforms.Compose([
     )
 ])
 
+other_transform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=3),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
+
+
 # Load datasets using ImageFolder
-train_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "train"), transform)
-val_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "val"))
-test_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "test"))
+train_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "train"), train_transform)
+val_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "val"), other_transform)
+test_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "test"), other_transform)
 
 # Create a dataloader for training, validation and test set
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
