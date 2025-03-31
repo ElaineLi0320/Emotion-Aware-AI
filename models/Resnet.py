@@ -2,6 +2,7 @@
     An implementation of ResEmoteNet based on the GitHub repo of the paper that 
     introduced it for FER classisfication.
 """
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
