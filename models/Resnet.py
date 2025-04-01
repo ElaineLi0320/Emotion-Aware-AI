@@ -147,9 +147,9 @@ class ResEmoteNet(nn.Module):
         theta = theta.view(-1, 2, 3)
 
         # Create a grid generator with learnted affine transformation
-        grid = F.affine_grid(theta, x.size())
+        grid = F.affine_grid(theta, x.size(), align_corners=True)
         # Apply the affine transformation to the input image
-        x = F.grid_sample(x, grid)
+        x = F.grid_sample(x, grid, align_corners=True)
         return x
 
     def forward(self, x):
