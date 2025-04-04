@@ -75,29 +75,29 @@ class ResEmoteNet(nn.Module):
         super().__init__()
 
         # Spatial localization network: input shape (3, 48, 48)
-        # self.localization = nn.Sequential(
-        #     # (3, 48, 48) -> (32, 42, 42)
-        #     nn.Conv2d(3, 16, kernel_size=7),
-        #     # (32, 42, 42) -> (32, 21, 21)
-        #     nn.MaxPool2d(2, stride=2),
-        #     nn.ReLU(inplace=True),
-        #     # (32, 21, 21) -> (64, 15, 15)  
-        #     nn.Conv2d(16, 32, kernel_size=7),
-        #     # (64, 15, 15) -> (64, 7, 7)
-        #     nn.MaxPool2d(2, stride=2),
-        #     nn.ReLU(inplace=True)
-        # )
+        self.localization = nn.Sequential(
+            # (3, 48, 48) -> (32, 42, 42)
+            nn.Conv2d(3, 16, kernel_size=7),
+            # (32, 42, 42) -> (32, 21, 21)
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(inplace=True),
+            # (32, 21, 21) -> (64, 15, 15)  
+            nn.Conv2d(16, 32, kernel_size=7),
+            # (64, 15, 15) -> (64, 7, 7)
+            nn.MaxPool2d(2, stride=2),
+            nn.ReLU(inplace=True)
+        )
 
         # Affine transformation layer
-        # self.fc_loc = nn.Sequential(
-        #     nn.Linear(32 * 7 * 7, 32),
-        #     nn.ReLU(inplace=True),
-        #     nn.Linear(32, 3 * 2)
-        # )
+        self.fc_loc = nn.Sequential(
+            nn.Linear(32 * 7 * 7, 32),
+            nn.ReLU(inplace=True),
+            nn.Linear(32, 3 * 2)
+        )
 
         # Initialize the weights and biases of the affine transformation layer
-        # self.fc_loc[2].weight.data.zero_()
-        # self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
+        self.fc_loc[2].weight.data.zero_()
+        self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
         # First conv layer followed by batch norm layer 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
@@ -154,7 +154,7 @@ class ResEmoteNet(nn.Module):
 
     def forward(self, x):
         # Apply STN to the input image
-        # x = self.stn(x)
+        x = self.stn(x)
 
         # First conv block
         x = F.relu(self.bn1(self.conv1(x)))
