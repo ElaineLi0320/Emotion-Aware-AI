@@ -20,7 +20,7 @@ wandb_entity = os.getenv("WANDB_ENTITY")
 # Define globla variables and hyperparameters
 BASE_PATH = "data/"
 BATCH_SIZE = int(input("Batch Size[default 16]: ").strip() or 16)
-EPOCHS = int(input("Epochs[default 100]: ").strip() or 100)
+EPOCHS = int(input("Epochs[default 200]: ").strip() or 200)
 DS_PATH = input("Dataset Path: ").strip()
 LR = float(input("Optimizer Learning Rate[default 0.001]: ").strip() or 0.001)
 MOMENTUM = float(input("Optimizer Momentum[default 0.9]: ").strip() or 0.9)
@@ -100,6 +100,8 @@ print(f"Model Total Params: {total_params:,}")
 # Configure loss function and optimizer
 loss_fn = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
+# Set max gradient norm
+max_grad_norm = 1.0
 wandb.watch(model, log="all")
 
 # ====================================== START TRAINING ==================================
@@ -149,6 +151,9 @@ for epoch in range(EPOCHS):
 
         # Initiate backpropagation
         loss.backward()
+
+        # Add gradient clipping before optimizer step
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
         # Update weights
         optimizer.step()
@@ -219,7 +224,8 @@ for epoch in range(EPOCHS):
         "val_loss": val_loss,
         "val_acc": val_acc, 
         "test_loss": test_loss,
-        "test_acc": test_acc
+        "test_acc": test_acc,
+        "gradient_norm": torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
     })
 
     print(f"Epoch {epoch}: train loss {train_loss:.4f}, train accuracy {train_acc:.4f};",
