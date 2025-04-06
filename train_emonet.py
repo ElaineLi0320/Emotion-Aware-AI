@@ -19,8 +19,8 @@ import random
 import argparse
 from datetime import datetime
 from models.Emonext import get_model
-import wandb 
-
+import wandb
+import matplotlib.pyplot as plt
 load_dotenv()
 wandb_api_key = os.getenv("WANDB_API_KEY")
 wandb_entity = os.getenv("WANDB_ENTITY")
