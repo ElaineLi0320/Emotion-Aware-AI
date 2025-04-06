@@ -248,7 +248,7 @@ for epoch in range(EPOCHS):
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         cumu_interval = 0
-        # Save a copy of state_dict of best performing  model instead of a reference
+        # Save a copy of state_dict of best performing model
         torch.save(deepcopy(model.state_dict()), "/result/best_model.pth")
     else:
         cumu_interval += 1
@@ -256,10 +256,13 @@ for epoch in range(EPOCHS):
 
     if cumu_interval > max_interval:
         print(f"Stopping at {epoch_actual} epoch after no improvement for {max_interval} epochs.")
-        artifact = wandb.Artifact(name=f"model-{exec_name}", type="model")
-        artifact.add_file("/result/best_model.pth")
-        wandb.log_artifact(artifact)
         break
+
+# After the training loop ends, upload the best model to wandb:
+print(f"Training completed. Best validation accuracy: {best_val_acc:.4f}")
+artifact = wandb.Artifact(name=f"model-{exec_name}", type="model")
+artifact.add_file("/result/best_model.pth")
+wandb.log_artifact(artifact)
 
 wandb.finish()
 
