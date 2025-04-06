@@ -6,7 +6,6 @@ from tqdm import tqdm
 import torch
 from copy import deepcopy
 from torchvision import transforms, datasets
-import time
 from dotenv import load_dotenv
 from models.Resnet import ResEmoteNet
 import wandb
@@ -53,10 +52,24 @@ train_transform = transforms.Compose([
     # transforms.Resize((64, 64)),
     # Faciliate the execution of SE Block
     transforms.Grayscale(num_output_channels=3),
-    # Introduces variability
+
+     # 1. Intensity/Contrast adjustments (more appropriate for grayscale)
+    transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.3),
+    
+    # 2. Spatial transformations
     transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
     transforms.RandomRotation(degrees=20),
+    transforms.RandomAffine(
+        degrees=0,
+        translate=(0.1, 0.1),  # slight translation
+        scale=(0.9, 1.1),  # slight scaling
+    ),
+
+    # 3. Noise and dropout (simulate different image qualities)
+    transforms.RandomErasing(p=0.1, scale=(0.02, 0.04)),  # reduced probability and scale
+    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.2)),
+    
+    # 4. Normalization
     transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
