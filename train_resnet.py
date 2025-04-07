@@ -49,9 +49,9 @@ print(f"Using {device} device...\n")
 
 # ============= Build a data transformation pipeline ============
 train_transform = transforms.Compose([
-    # transforms.Resize((64, 64)),
-    # Faciliate the execution of SE Block
+    transforms.Resize((48, 48)),
     transforms.Grayscale(num_output_channels=3),
+    transforms.ToTensor(),
 
      # 1. Intensity/Contrast adjustments (more appropriate for grayscale)
     transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.3),
@@ -70,7 +70,6 @@ train_transform = transforms.Compose([
     transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.2)),
     
     # 4. Normalization
-    transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
         std=[0.229, 0.224, 0.225]
