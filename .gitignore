@@ -17,7 +17,7 @@ Pipfile*
 __pycache__/
 
 # Large model parameter files
-result/*.pth
+result/
 
 # Docker ignore file
 .dockerignore
