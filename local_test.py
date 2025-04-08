@@ -7,6 +7,7 @@ import cv2
 import torch.nn.functional as F
 from PIL import Image
 import numpy as np
+from ultralytics import YOLO
 
 # Configure Pytorch computation backend to either Nvidia GPUs or Apple silicon
 device = "cuda" if torch.cuda.is_available() else "mps"
@@ -28,9 +29,9 @@ transform = transforms.Compose([
     )
 ])
 
-# Instantiate a haar cascade classifier with a pretrained face detection model
-face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades 
-                                        + "haarcascade_frontalface_default.xml")
+# Load YOLOv8 model for face detection
+# Use a model specifically trained for face detection
+face_detector = YOLO('result/yolov8n-face.pt') 
 
 # Settings for text
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -59,7 +60,7 @@ def infer_emotion(frame):
     rounded_scores = [round(score, 2) for score in scores]
     return rounded_scores
 
-def infer_max_emotion(x, y, w, h,frame):
+def infer_max_emotion(x, y, w, h, frame):
     """
         Employ our ML model to infer the most likely emotion in a video frame
         
@@ -72,7 +73,6 @@ def infer_max_emotion(x, y, w, h,frame):
     scores = infer_emotion(pil_img)
     max_idx = np.argmax(scores)
     return emotions[max_idx]
-
 
 def print_max_emotion(x, y, frame, emotion):
     """
@@ -100,30 +100,59 @@ def print_all_emotion(x, y, w, h, frame):
 
 def detect_bounding_box(frame, counter):
     """
-        Detect faces in a video stream
+        Detect faces in a video stream using YOLOv8
 
         frame: an image frame
         counter: an integer controlling when to invoke our ML model
     """
     global max_emotion
-    gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_classifier.detectMultiScale(gray_img, 1.1, 5, minSize=(40, 40))
+    
+    # Run YOLOv8 detection with confidence threshold
+    results = face_detector(frame, conf=0.5)  # Higher confidence threshold for more precise detections
+    
+    # Process each detected face
+    for result in results:
+        boxes = result.boxes
+        for box in boxes:
+            # Get box coordinates (convert to integers)
+            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            
+            # Ensure the bounding box is not too large (focus on face)
+            # If the box is too large, try to make it more square and centered
+            w = x2 - x1
+            h = y2 - y1
+            
+            # If the box is too large, adjust it to be more face-like
+            if w > frame.shape[1] // 2 or h > frame.shape[0] // 2:
+                # Calculate center of the box
+                center_x = (x1 + x2) // 2
+                center_y = (y1 + y2) // 2
+                
+                # Make the box more square and smaller
+                size = min(w, h) // 2
+                x1 = max(0, center_x - size)
+                y1 = max(0, center_y - size)
+                x2 = min(frame.shape[1], center_x + size)
+                y2 = min(frame.shape[0], center_y + size)
+                
+                # Recalculate width and height
+                w = x2 - x1
+                h = y2 - y1
+            
+            # Draw a bounding box around a face
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-    for x, y, w, h in faces:
-        # Draw a bounding box around a face
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            # Infer emotion on defined interval
+            if counter == 0:
+                max_emotion = infer_max_emotion(x1, y1, w, h, frame)
 
-        # Infer emotion on defined interval
-        if counter == 0:
-            max_emotion = infer_max_emotion(x, y, w, h, frame)
-
-        print_max_emotion(x, y, frame, max_emotion)
-        print_all_emotion(x, y, w, h, frame)
-
-    return faces
+            print_max_emotion(x1, y1, frame, max_emotion)
+            print_all_emotion(x1, y1, w, h, frame)
+    
+    return len(results) > 0  # Return True if faces were detected
 
 # Access live webcam feed
-video_capture =cv2.VideoCapture(0)
+video_capture = cv2.VideoCapture(0)
 
 counter = 0
 detect_frequency = 5
@@ -135,9 +164,9 @@ while True:
         break
 
     # Draw a bounding box around faces
-    faces = detect_bounding_box(video_frame, counter)
+    faces_detected = detect_bounding_box(video_frame, counter)
 
-    cv2.imshow("Emotion Dection", video_frame)
+    cv2.imshow("Emotion Detection", video_frame)
 
     if cv2.waitKey(1) & 0xff == ord('q'):
         break
