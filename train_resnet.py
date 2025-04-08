@@ -14,6 +14,7 @@ from models.Resnet import ResEmoteNet
 import wandb
 from datetime import datetime
 import argparse
+from sklearn.utils.class_weight import compute_class_weight
 
 # Load environment variables
 load_dotenv()
@@ -60,8 +61,20 @@ class Trainer:
 
         self.model = model.to(self.device)
 
+        # Compute class weights
+        class_labels = []
+        for _, label in self.train_dl.dataset:
+            class_labels.append(label)
+
+        class_weights = compute_class_weight(class_weight="balanced", 
+                                             classes=np.unique(class_labels), 
+                                             y=class_labels)
+        print(f"Class weights: {class_weights}")
+        
+        class_weights = torch.tensor(class_weights, dtype=torch.float32).to(self.device)
+
         # Configure loss function and optimizer
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights)
         self.optimizer = torch.optim.SGD(
             model.parameters(), 
             lr=lr, 
@@ -258,14 +271,14 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_path", type=str, help="Path to the entire dataset")
     parser.add_argument("--output_dir", type=str, 
                         help="Path to save the model checkpoint", default="/result")
-    parser.add_argument("--epochs", type=int, help="Maximum number of epochs", default=200)
-    parser.add_argument("--batch_size", type=int, help="Batch size for training", default=16)
-    parser.add_argument("--lr", type=float, help="Learning rate", default=0.001)
-    parser.add_argument("--momentum", type=float, help="Optimizer momentum", default=0.9)
-    parser.add_argument("--weight_decay", type=float, help="Optimizer weight decay", default=1e-3)
-    parser.add_argument("--early_stop", type=int, help="Early stopping patience", default=15)
-    parser.add_argument("--num_workers", type=int, default=2,
-                        help="The number of subprocesses to use for data loading")
+    parser.add_argument("--epochs", type=int, help="Maximum number of epochs(default=200)", default=200)
+    parser.add_argument("--batch_size", type=int, help="Batch size for training(default=16)", default=16)
+    parser.add_argument("--lr", type=float, help="Learning rate(default=0.001)", default=0.001)
+    parser.add_argument("--momentum", type=float, help="Optimizer momentum(default=0.9)", default=0.9)
+    parser.add_argument("--weight_decay", type=float, help="Optimizer weight decay(default=1e-3)", default=1e-3)
+    parser.add_argument("--early_stop", type=int, help="Early stopping patience(default=10)", default=10)
+    parser.add_argument("--num_workers", type=int, default=1,
+                        help="The number of subprocesses to use for data loading(default=1)")
 
     opt = parser.parse_args()
 
