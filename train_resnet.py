@@ -318,25 +318,11 @@ if __name__ == "__main__":
     train_transform = transforms.Compose([
         transforms.Resize((48, 48)),
         transforms.Grayscale(num_output_channels=3),
-        transforms.ToTensor(),
-
-        # 1. Intensity/Contrast adjustments (more appropriate for grayscale)
-        transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.3),
         
-        # 2. Spatial transformations
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=20),
-        transforms.RandomAffine(
-            degrees=0,
-            translate=(0.1, 0.1),  # slight translation
-            scale=(0.9, 1.1),  # slight scaling
-        ),
-
-        # 3. Noise and dropout (simulate different image qualities)
-        transforms.RandomErasing(p=0.1, scale=(0.02, 0.04)),  # reduced probability and scale
-        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.2)),
         
-        # 4. Normalization
+        transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225]
