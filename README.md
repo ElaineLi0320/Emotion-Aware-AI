@@ -35,6 +35,6 @@ We built and experimented with two state-of-the-art [facial emotion recognition(
 
 However, it quickly caught my attention that ResEmoteNet performs far worse than the 79.79% test accuracy that the authors claim to have achieved when training with the same FER2013 benchmark dataset. Furthmore, a substantial amount of overfitting was observed when training with the specified hyperparameters from the original paper. These results are illustrated in following graphs
 
-<img width="649" alt="val loss" src="asset/val_loss.png" /><img width="649" alt="test loss" src="asset/test_loss.png" />
-<img width="649" alt="val acc" src="asset/val_acc.png" /><img width="649" alt="test acc" src="asset/test_acc.png" />
+<img width="50%" alt="val loss" src="asset/val_loss.png" style="display: inline-block; margin-right: 10px;" /><img width="50%" alt="test loss" src="asset/test_loss.png" style="display: inline-block;" />
+<img width="50%" alt="val acc" src="asset/val_acc.png" style="display: inline-block; margin-right: 10px;"" /><img width="50%" alt="test acc" src="asset/test_acc.png" style="display: inline-block;" />
 
