@@ -8,7 +8,7 @@ import sys
 import numpy as np
 from copy import deepcopy
 from torchvision import transforms, datasets
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from dotenv import load_dotenv
 from models.Resnet import ResEmoteNet
 import wandb
@@ -28,6 +28,39 @@ torch.cuda.manual_seed(seed)   # Controls PyTorch's GPU operations
 np.random.seed(seed)           # Controls NumPy's random operations
 torch.backends.cudnn.deterministic = True  # Makes cuDNN operations deterministic
 torch.backends.cudnn.benchmark = False     # Disables cuDNN's benchmarking
+
+def create_weighted_sampler(dataset):
+    """
+    Create a weighted sampler for the dataset to handle class imbalance.
+    Samples are drawn with replacement, with weights inversely proportional to class frequencies.
+    
+    Args:
+        dataset: PyTorch dataset
+    
+    Returns:
+        WeightedRandomSampler
+    """
+    # Get all labels from the dataset
+    labels = []
+    for _, label in dataset:
+        labels.append(label)
+    labels = np.array(labels)
+    
+    # Calculate class weights inversely proportional to class frequencies
+    class_counts = np.bincount(labels)
+    weights = 1.0 / class_counts
+    
+    # Create sample weights for each data point
+    sample_weights = weights[labels]
+    
+    # Create and return the sampler
+    sampler = WeightedRandomSampler(
+        weights=sample_weights,
+        num_samples=len(dataset),
+        replacement=True  # Always True for weighted sampling
+    )
+    
+    return sampler
 
 class Trainer:
     def __init__(self, model, train_dl, validation_dl, test_dl, classes, 
@@ -57,7 +90,6 @@ class Trainer:
         self.num_classes = len(classes)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "mps")
-        print(f"Device used: {self.device}")
 
         self.model = model.to(self.device)
 
@@ -276,7 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, help="Learning rate(default=0.001)", default=0.001)
     parser.add_argument("--momentum", type=float, help="Optimizer momentum(default=0.9)", default=0.9)
     parser.add_argument("--weight_decay", type=float, help="Optimizer weight decay(default=1e-3)", default=1e-3)
-    parser.add_argument("--early_stop", type=int, help="Early stopping patience(default=10)", default=10)
+    parser.add_argument("--early_stop", type=int, help="Early stopping patience(default=10)", default=15)
     parser.add_argument("--num_workers", type=int, default=1,
                         help="The number of subprocesses to use for data loading(default=1)")
 
@@ -318,11 +350,25 @@ if __name__ == "__main__":
     train_transform = transforms.Compose([
         transforms.Resize((48, 48)),
         transforms.Grayscale(num_output_channels=3),
+        transforms.ToTensor(),
+
+        # 1. Intensity/Contrast adjustments (more appropriate for grayscale)
+        transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.3),
         
+        # 2. Spatial transformations
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(degrees=20),
+        transforms.RandomAffine(
+            degrees=0,
+            translate=(0.1, 0.1),  # slight translation
+            scale=(0.9, 1.1),  # slight scaling
+        ),
+
+        # 3. Noise and dropout (simulate different image qualities)
+        transforms.RandomErasing(p=0.1, scale=(0.02, 0.04)),  # reduced probability and scale
+        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 0.2)),
         
-        transforms.ToTensor(),
+        # 4. Normalization
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225]
@@ -344,10 +390,12 @@ if __name__ == "__main__":
     test_ds = datasets.ImageFolder(os.path.join(FULL_PATH, "test"), other_transform)
 
     # Create a dataloader for training, validation and test set
+    train_sampler = create_weighted_sampler(train_ds)
+    
     train_dl = DataLoader(
         train_ds, 
         batch_size=opt.batch_size, 
-        shuffle=True,
+        sampler=train_sampler,  # Use sampler instead of shuffle
         num_workers=opt.num_workers
     )
     val_dl = DataLoader(
