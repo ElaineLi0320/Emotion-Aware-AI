@@ -80,7 +80,7 @@ cp -r /path/to/your/data/folder data
 The data folder should contain the following structure:
 ```
 data/
-├── fer2013/              # Your dataset folder
+├── fer2013/             # Your dataset folder
 │   ├── train/            # Training subfolder
 │       ├── train_label/     # Training labels
 │       └── image1.jpg       # Training images
@@ -96,7 +96,7 @@ data/
 │       └── image1.jpg       # Test images
 │       └── image2.jpg       # Test images
 │       └── ...
-└── main.py                 # Data collection script
+└── main.py               # Data collection script
 ```
 
 > [!Note]
@@ -166,13 +166,13 @@ The `.dockerignore` file excludes:
 
 ```
 Emotion-Aware-AI/
-├── data/                  # Dataset directory
-├── models/               # Model implementations
+├── data/               # Dataset directory
+├── models/             # Model implementations
 │   ├── Resnet.py        # ResEmoteNet model
 │   └── Emonext.py       # EmoNeXt model
-├── train_resnet.py      # ResEmoteNet training script
-├── train_emonet.py      # EmoNeXt training script
-├── requirements.txt     # Python dependencies
+├── train_resnet.py     # ResEmoteNet training script
+├── train_emonet.py     # EmoNeXt training script
+├── requirements.txt    # Python dependencies
 ├── Dockerfile          # Docker configuration
 ├── .dockerignore       # Docker ignore rules
 └── README.md           # Project documentation
