@@ -44,5 +44,143 @@ To combat these problems, we explored the following techniques:
 - **Weighted loss**: scale up cross entropy loss on minority classes and scale down on majority classes;
 - **Weighted sampling**: add a `WeightedRandomSampler` to training dataloader to balance sampling probabilities between majority classes and minority classes.
 
+## Model Training
+
+### Environment setup
+We recommend building a virtual environment on your local machine to run our scripts. 
+1. Launch a virtual enviroment(for example, pipenv).
+```
+pipenv shell
+```
+
+2. Clone the repository.
+```
+git clone https://github.com/Cherisea/Emotion-Aware-AI.git
+```
+
+3. Install required libraries.
+```
+pipenv install -r requirements.txt
+```
+
+### Data setup
+
+1. Create a symbolic link to your data folder:
+```bash
+# From the project root directory
+ln -s /path/to/your/data/folder data
+```
+
+2. Alternatively, you can manually copy your data:
+```bash
+# From the project root directory
+cp -r /path/to/your/data/folder data
+```
+
+The data folder should contain the following structure:
+```
+data/
+├── fer2013/              # Your dataset folder
+│   ├── train/           # Training images
+│       ├── train_label/     # Training labels
+│       └── image1.jpg       # Training images
+│       └── image2.jpg       # Training images
+│       └── ...
+│   ├── val/             # Validation images
+│       ├── val_label/       # Validation labels
+│       └── image1.jpg       # Validation images
+│       └── image2.jpg       # Validation images
+│       └── ...
+│   └── test/            # Test images
+│       ├── test_label/      # Test labels
+│       └── image1.jpg       # Test images
+│       └── image2.jpg       # Test images
+│       └── ...
+└── main.py              # Data collection script
+```
+
+> [!Note]
+> Make sure your data folder contains the required subdirectories (train, val, test) with the appropriate emotion-labeled subfolders.
+
+### Environment variables
+
+Create a `.env` file in the root directory with the following variables:
+```
+WANDB_API_KEY=your_wandb_api_key
+WANDB_ENTITY=your_wandb_entity
+```
+
+### Training models
+If training on local machines, use the following command:
+
+```bash
+python train_resnet.py --dataset_path <path_to_dataset> --output_dir <output_directory> --epochs <number_of_epochs> --batch_size <batch_size> --lr <learning_rate> --momentum <momentum> --weight_decay <weight_decay> --early_stop <early_stopping_patience> --num_workers <num_workers>
+```
+
+Example:
+```bash
+python train_resnet.py --dataset_path fer2013 --output_dir /result --epochs 200 --batch_size 16 --lr 0.001 --momentum 0.9 --weight_decay 1e-3 --early_stop 10 --num_workers 4
+```
+Command for training EmoNeXt is similar. Consult our code for more details. If training on a HPC like Discovery, move to the next section[Docker Setup](#docker-setup). 
+
+
+## Docker setup
+
+### Building the docker image
+
+1. Make sure you have Docker installed on your system.
+
+2. Build the Docker image using the provided Dockerfile:
+```bash
+docker build -t [docker_tag] .
+```
+
+3. Push the image to a container registry:
+```bash
+docker push [docker_tag]
+```
+
+### Docker configuration
+
+The Dockerfile is configured to:
+- Use Python 3.9 as the base image
+- Install all required dependencies from requirements.txt
+- Set up the working directory as /app
+- Make the result directory writable
+- Use bash as the entry point
+
+### Docker ignore
+
+The `.dockerignore` file excludes:
+- Git-related files
+- Python cache files
+- Virtual environments
+- Test files
+- Asset directories
+- Data files
+- Result directories
+- Wandb logs
+- Documentation files
+
+## Project structure
+
+```
+Emotion-Aware-AI/
+├── data/                  # Dataset directory
+├── models/               # Model implementations
+│   ├── Resnet.py        # ResEmoteNet model
+│   └── Emonext.py       # EmoNeXt model
+├── train_resnet.py      # ResEmoteNet training script
+├── train_emonet.py      # EmoNeXt training script
+├── requirements.txt     # Python dependencies
+├── Dockerfile          # Docker configuration
+├── .dockerignore       # Docker ignore rules
+└── README.md           # Project documentation
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 
 
