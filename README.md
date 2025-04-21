@@ -30,11 +30,19 @@ Since custom images are collected via Google Images API, make sure to load your 
 > [!CAUTION]
 > Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in [main.py](data/main.py). 
 
-## Model
+## FER Model
 We built and experimented with two state-of-the-art [facial emotion recognition(FER)](https://paperswithcode.com/sota/facial-expression-recognition-on-fer2013?p=resemotenet-bridging-accuracy-and-loss) models, [ResEmoteNet](https://arxiv.org/pdf/2409.10545) and [EmoNeXt](https://ieeexplore.ieee.org/abstract/document/10337732), based on their original implementation, with a particular focus on the first due to various research constraints. 
 
 However, it quickly caught my attention that ResEmoteNet performs far worse than the 79.79% test accuracy that the authors claim to have achieved when training with the same FER2013 benchmark dataset. Furthmore, a substantial amount of overfitting was observed when training with the specified hyperparameters from the original paper. These results are illustrated in following graphs
 
 <img width="50%" alt="val loss" src="asset/val_loss.png" style="display: inline-block; margin-right: 10px;" /><img width="50%" alt="test loss" src="asset/test_loss.png" style="display: inline-block;" />
 <img width="50%" alt="val acc" src="asset/val_acc.png" style="display: inline-block; margin-right: 10px;" /><img width="50%" alt="test acc" src="asset/test_acc.png" style="display: inline-block;" />
+
+To combat these problems, we explored the following techniques:
+- **Spatial Transformation Network(STN)**: strengthen geometric invariance of a neural network model by learning to perform spatial transformation on input images that eliminate translation, rotation and warping.
+- **Data augmentation**: enhance existing training data transformation pipeline by adding more data augmentations, such as RandomRotation, RandomAffine etc.;
+- **Weighted loss**: scale up cross entropy loss on minority classes and scale down on majority classes;
+- **Weighted sampling**: add a `WeightedRandomSampler` to training dataloader to balance sampling probabilities between majority classes and minority classes.
+
+
 
