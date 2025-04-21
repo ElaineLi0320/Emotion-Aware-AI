@@ -81,22 +81,22 @@ The data folder should contain the following structure:
 ```
 data/
 ├── fer2013/              # Your dataset folder
-│   ├── train/           # Training images
+│   ├── train/            # Training subfolder
 │       ├── train_label/     # Training labels
 │       └── image1.jpg       # Training images
 │       └── image2.jpg       # Training images
 │       └── ...
-│   ├── val/             # Validation images
+│   ├── val/              # Validation subfolder
 │       ├── val_label/       # Validation labels
 │       └── image1.jpg       # Validation images
 │       └── image2.jpg       # Validation images
 │       └── ...
-│   └── test/            # Test images
+│   └── test/              # Test subfolder
 │       ├── test_label/      # Test labels
 │       └── image1.jpg       # Test images
 │       └── image2.jpg       # Test images
 │       └── ...
-└── main.py              # Data collection script
+└── main.py                 # Data collection script
 ```
 
 > [!Note]
@@ -104,7 +104,7 @@ data/
 
 ### Environment variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory with the following variables for logging to wandb:
 ```
 WANDB_API_KEY=your_wandb_api_key
 WANDB_ENTITY=your_wandb_entity
@@ -121,7 +121,7 @@ Example:
 ```bash
 python train_resnet.py --dataset_path fer2013 --output_dir /result --epochs 200 --batch_size 16 --lr 0.001 --momentum 0.9 --weight_decay 1e-3 --early_stop 10 --num_workers 4
 ```
-Command for training EmoNeXt is similar. Consult our code for more details. If training on a HPC like Discovery, move to the next section[Docker Setup](#docker-setup). 
+Command for training EmoNeXt is similar. Consult our code for more details. If training on a HPC like Discovery, move to the next section [Docker Setup](#docker-setup). 
 
 
 ## Docker setup
