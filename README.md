@@ -1,7 +1,7 @@
 # Emotion-Aware-AI
 This research project aims to increase user engagement of learning games with a topic in computer science by dynamically adjusting the difficulty level through an emotion-aware NPC (Non-player character). The NPC, powered by an facial emotion recognition (FER) algorithm that categorizes facial expressions into 8 emotion types (including 3 custom ones), detects the current state of players via a combination of camera feed and in-game text sent between players.
 
-## Data Collection
+## 1. Data Collection
 Following the standard of well-known dataset FER-2013 created by Pierre Luc Carrier and Aaron Courville, integer labels are used to classify facial images expressing eight emotions, three of which (in italics) are tailored to the needs of this project:
 - 0: Angry -- 4953
 - 1: *Frustration* -- 265
@@ -30,7 +30,7 @@ Since custom images are collected via Google Images API, make sure to load your 
 > [!CAUTION]
 > Other modes in the menu may break since they have been deprecated upon finishing data collection. Please see comments in [main.py](data/main.py). 
 
-## FER Model
+## 2. FER Model
 We built and experimented with two state-of-the-art [facial emotion recognition(FER)](https://paperswithcode.com/sota/facial-expression-recognition-on-fer2013?p=resemotenet-bridging-accuracy-and-loss) models, [ResEmoteNet](https://arxiv.org/pdf/2409.10545) and [EmoNeXt](https://ieeexplore.ieee.org/abstract/document/10337732), based on their original implementation, with a particular focus on the first due to various research constraints. 
 
 However, it quickly caught my attention that ResEmoteNet performs far worse than the 79.79% test accuracy that the authors claim to have achieved when training with the same FER2013 benchmark dataset. Furthmore, a substantial amount of overfitting was observed when training with the specified hyperparameters from the original paper. These results are illustrated in following graphs
@@ -44,7 +44,7 @@ To combat these problems, we explored the following techniques:
 - **Weighted loss**: scale up cross entropy loss on minority classes and scale down on majority classes;
 - **Weighted sampling**: add a `WeightedRandomSampler` to training dataloader to balance sampling probabilities between majority classes and minority classes.
 
-## Model Training
+## 3. Model Training
 
 ### Environment setup
 We recommend building a virtual environment on your local machine to run our scripts. 
@@ -124,7 +124,7 @@ python train_resnet.py --dataset_path fer2013 --output_dir /result --epochs 200 
 Command for training EmoNeXt is similar. Consult our code for more details. If training on a HPC like Discovery, move to the next section [Docker Setup](#docker-setup). 
 
 
-## Docker setup
+## 4. Docker Setup
 
 ### Building the docker image
 
@@ -162,7 +162,7 @@ The `.dockerignore` file excludes:
 - Wandb logs
 - Documentation files
 
-## Project structure
+## 5. Project Structure
 
 ```
 Emotion-Aware-AI/
@@ -177,6 +177,12 @@ Emotion-Aware-AI/
 ├── .dockerignore       # Docker ignore rules
 └── README.md           # Project documentation
 ```
+
+## 6. Future Work
+Unexplored areas that could serve as direction for future work include:
+- Investigate why weighted loss/sampling didn't yield any improvement in performance;
+- Experiment with various changes to the original model architecture, including STN and compare their resulting performance;
+- Examine the suitability of accuracy as performance metric and access it against other measures such as balanced accuracy or F1 score; 
 
 ## License
 
